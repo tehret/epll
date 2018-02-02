@@ -14,7 +14,7 @@
 
 #include <vector>
 #include <string>
-#include <fftw3.h>
+//#include <fftw3.h>
 
 /**
  * @brief Structure containing size informations of an image.

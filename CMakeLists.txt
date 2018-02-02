@@ -18,8 +18,8 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -ggdb")
 
 set(CMAKE_BUILD_TYPE Release)
 
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -lfftw3 -lfftw3f -g -fsanitize=address")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -lfftw3 -lfftw3f -O3 -w -s -ffast-math -fomit-frame-pointer -fstrength-reduce")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g -fsanitize=address")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3 -w -s -ffast-math -fomit-frame-pointer -fstrength-reduce")
 
 ###############################################################################
 
@@ -35,12 +35,7 @@ find_package (TIFF REQUIRED)
 find_package (JPEG REQUIRED)
 find_package (PNG REQUIRED)
 include_directories (PUBLIC ${TIFF_INCLUDE_DIR} PUBLIC ${JPEG_INCLUDE_DIR} PUBLIC ${PNG_INCLUDE_DIRS} PUBLIC ${FFTW_INCLUDES})
-
-###############################################################################
-
-find_path (FFTW_INCLUDES fftw3.h)
-find_library (FFTWF_LIBRARIES NAMES fftw3f)
-link_libraries (${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${PNG_LIBRARIES} ${FFTWF_LIBRARIES})
+link_libraries (${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${PNG_LIBRARIES})
 
 ###############################################################################
 
