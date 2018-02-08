@@ -34,7 +34,7 @@ find_package( LAPACKE REQUIRED )
 find_package (TIFF REQUIRED)
 find_package (JPEG REQUIRED)
 find_package (PNG REQUIRED)
-include_directories (PUBLIC ${TIFF_INCLUDE_DIR} PUBLIC ${JPEG_INCLUDE_DIR} PUBLIC ${PNG_INCLUDE_DIRS} PUBLIC ${FFTW_INCLUDES})
+include_directories (PUBLIC ${TIFF_INCLUDE_DIR} PUBLIC ${JPEG_INCLUDE_DIR} PUBLIC ${PNG_INCLUDE_DIRS})
 link_libraries (${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${PNG_LIBRARIES})
 
 ###############################################################################
