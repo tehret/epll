@@ -58,11 +58,13 @@ int main(int argc, char **argv)
 	const bool  changeBasis = clo_option("-yuv", false, "Change the RGB basis to YUV");
 	const int   rank        = clo_option("-r",     1000000000, "rank");
 
+	const bool  add_noise = clo_option("-add", true, "< Add noise");
+
 	int firstFrame = 1, lastFrame = 1, frameStep = 1;
 	bool verbose = false;
 
-	std::vector<float> betas {1,4,8,16,32}; 
-	//std::vector<float> betas {1};
+	std::vector<float> betas{1,4,8,16,32}; 
+	//std::vector<float> betas{1};
 
 	//! Check inputs
 	if (input_path == "")
@@ -80,7 +82,7 @@ int main(int argc, char **argv)
 
 
 	//! Add noise
-	if(sigma)
+	if(add_noise && sigma)
 	{
 		VideoUtils::addNoise(original, noisy, sigma, verbose);
 
@@ -89,6 +91,9 @@ int main(int argc, char **argv)
 	}
 	else
 		noisy = original;
+
+	if(patch_size <= 0)
+	       return 0;	
 
 	if(changeBasis)
 	{
@@ -147,13 +152,6 @@ int main(int argc, char **argv)
 	//! Run denoising algorithm
 	EPLLhalfQuadraticSplit(noisy, final, original, partialPSNR, sigma, patch_size, patch_size_channels, betas, iter, step, models);
 
-
-	//! Compute PSNR and RMSE
-	float final_psnr = -1, final_rmse = -1;
-	VideoUtils::computePSNR(original, final, final_psnr, final_rmse);
-
-	printf("final PSNR =\t%f\tRMSE =\t%f\n", final_psnr, final_rmse);
-
 	//! Compute Difference
 	VideoUtils::computeDiff(original, final, diff, sigma);
 
@@ -165,6 +163,12 @@ int main(int argc, char **argv)
 		final(x,y,t,c) *= 255.;
 		diff(x,y,t,c) *= 255.;
 	}
+
+	//! Compute PSNR and RMSE
+	float final_psnr = -1, final_rmse = -1;
+	VideoUtils::computePSNR(original, final, final_psnr, final_rmse, 255.);
+
+	printf("final PSNR =\t%f\tRMSE =\t%f\n", final_psnr, final_rmse);
 
 	if(changeBasis)
 	{
