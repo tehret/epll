@@ -152,6 +152,12 @@ int main(int argc, char **argv)
 	//! Run denoising algorithm
 	EPLLhalfQuadraticSplit(noisy, final, original, partialPSNR, sigma, patch_size, patch_size_channels, betas, iter, step, models);
 
+	//! Compute PSNR and RMSE
+	float final_psnr = -1, final_rmse = -1;
+	VideoUtils::computePSNR(original, final, final_psnr, final_rmse, 1.);
+
+	printf("final PSNR =\t%f\tRMSE =\t%f\n", final_psnr, 255.*final_rmse);
+
 	//! Compute Difference
 	VideoUtils::computeDiff(original, final, diff, sigma);
 
@@ -164,11 +170,6 @@ int main(int argc, char **argv)
 		diff(x,y,t,c) *= 255.;
 	}
 
-	//! Compute PSNR and RMSE
-	float final_psnr = -1, final_rmse = -1;
-	VideoUtils::computePSNR(original, final, final_psnr, final_rmse, 255.);
-
-	printf("final PSNR =\t%f\tRMSE =\t%f\n", final_psnr, final_rmse);
 
 	if(changeBasis)
 	{
