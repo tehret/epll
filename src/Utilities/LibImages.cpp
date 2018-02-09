@@ -27,7 +27,6 @@
 #include <sstream>
 #include <stdlib.h>
 #include <math.h>
-#include <omp.h>
 
 extern "C" {
 #include "iio.h"
