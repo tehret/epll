@@ -554,6 +554,7 @@ namespace VideoUtils
 	,   Video<T> const& i_vid2
 	,   float &o_psnr
 	,   float &o_rmse
+	,   float imax = 1. 
 	){
 		if (i_vid1.sz != i_vid2.sz)
 			throw std::runtime_error("VideoUtils::computePSNR: videos have different sizes");
@@ -566,7 +567,7 @@ namespace VideoUtils
 			       ((double)i_vid1(k) - (double)i_vid2(k));
 
 		o_rmse = sqrtf(sum / (double) i_vid1.sz.whcf);
-		o_psnr = 20.f * log10f(1.f / o_rmse);
+		o_psnr = 20.f * log10f(imax / o_rmse);
 #else
 		// using doubles and recursive formula
 		double mse = 0.f;
