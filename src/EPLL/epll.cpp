@@ -37,7 +37,6 @@
 void EPLLhalfQuadraticSplit(Video<float>& noiseI, Video<float>& finalI, Video<float>& origI, bool partialPSNR, float noiseSD, int patchsize, int patchsizeChannels, std::vector<float> betas, int T, int pas, std::vector<Model>& models)
 {
 	int N = patchsize*patchsize;
-	int lambda = N;
 
 	finalI = noiseI;
 
@@ -48,16 +47,18 @@ void EPLLhalfQuadraticSplit(Video<float>& noiseI, Video<float>& finalI, Video<fl
 			Video<float> tempI(noiseI.sz, 0.);
 			float sigma = noiseSD/std::sqrt(betas[i]);
 			sigma /= 255.;
+
+			// Compute the maximum a posteriori estimation of the set of patches in finalI for the given pre-learned GMM model
 			aprxMAPGMM(finalI, tempI, sigma, patchsize, patchsizeChannels, pas, models);
 
+			// Update the final estimate by combining the noisy image and the current estimate
 			for(int x = 0; x < finalI.sz.width; ++x)	
 			for(int y = 0; y < finalI.sz.height; ++y)	
 			for(int t = 0; t < finalI.sz.frames; ++t)	
 			for(int c = 0; c < finalI.sz.channels; ++c)	
-			{
-				finalI(x,y,t,c) = (lambda*noiseI(x,y,t,c) + betas[i]*N*tempI(x,y,t,c))/(lambda + betas[i]*N);
-			}
+				finalI(x,y,t,c) = (noiseI(x,y,t,c) + betas[i]*tempI(x,y,t,c))/(1. + betas[i]);
 
+			// Print partial PSNR to track the improvement
 			if(partialPSNR)
 			{
 				float psnr, rmse;
@@ -82,7 +83,7 @@ void aprxMAPGMM(Video<float>& noiseI, Video<float>& tempI, float sigma, int ps, 
 
 	Video<int> mask(noiseI.sz.width, noiseI.sz.height, noiseI.sz.frames, noiseI.sz.channels, 0);
 
-	//! Compute the mask of patches that need denoising 
+	// Compute the mask of patches that need denoising 
 	int nbP = 0;
 	for(int x = 0; x <= noiseI.sz.width-ps; ++x)	
 	for(int y = 0; y <= noiseI.sz.height-ps; ++y)	
@@ -100,7 +101,9 @@ void aprxMAPGMM(Video<float>& noiseI, Video<float>& tempI, float sigma, int ps, 
 	std::vector<float> patches(N*nbP);
 	std::vector<float> means(nbP);
 
-	// Prep the different objects in models
+	// Prepare the different objects in models:
+	// 1/ Compute the log of the determinant
+	// 2/ Precompute the matrix to fast compute the inverse of the covariance matrix
 	for(int m = 0; m < models.size(); ++m)
 	{
 		models[m].logdet = 0;
@@ -123,7 +126,7 @@ void aprxMAPGMM(Video<float>& noiseI, Video<float>& tempI, float sigma, int ps, 
 	{
 		if(mask(x,y,t,c) == 1)
 		{
-			// Compute the DC component
+			// Compute the DC component (average patch)
 			means[k] = 0.f;
 			for(int dc = 0; dc < psc; ++dc)
 			for(int dx = 0; dx < ps; ++dx)
@@ -132,7 +135,7 @@ void aprxMAPGMM(Video<float>& noiseI, Video<float>& tempI, float sigma, int ps, 
 
 			means[k] /= (float)N;
 
-			//load patch into vector
+			// Load patch into the specific vector while removing the DC component
 			for(int dc = 0, d = 0; dc < psc; ++dc)	
 			for(int dx = 0;        dx < ps; ++dx)	
 			for(int dy = 0;        dy < ps; ++dy, ++d)	
@@ -158,9 +161,10 @@ void aprxMAPGMM(Video<float>& noiseI, Video<float>& tempI, float sigma, int ps, 
 	for(int t = 0; t < noiseI.sz.frames; ++t)	
 	for(int c = 0; c < noiseI.sz.channels; ++c)	
 	{
+		// If this patch requires denoising
 		if(mask(x,y,t,c) == 1)
 		{
-			// Select the best Gaussian
+			// Select the best Gaussian based on the probability estimated for each Gaussian of the GMM (weights of the GMM are taken into account)
 			int best = 0;
 			float bestv = weights[0][k];
 			for(int m = 1; m < models.size(); ++m)
@@ -172,33 +176,32 @@ void aprxMAPGMM(Video<float>& noiseI, Video<float>& tempI, float sigma, int ps, 
 				}
 			}
 
+			// Extract the patch from the list of patches
 			for(int d = 0; d < N; ++d)
 				patch[d] = patches[k + nbP*d];
 
-			//! Z' = X'*U
+			// Compute the MAP patch for the chosen Gaussian 
 			productMatrix(tempPatch,
 					patch,
 					models[best].eigVects,
 					1, models[best].r, N,
 					false, false);
-
-			//! U * W
 			std::vector<float> eigVecs(models[best].eigVects);
 			float *eigv = eigVecs.data();
 			for (unsigned k = 0; k < models[best].r; ++k)
 			for (unsigned i = 0; i < N; ++i)
 				*eigv++ *= (models[best].eigVals[k] / (models[best].eigVals[k] + sigma2));
-
-			//! hX' = Z'*(U*W)'
 			productMatrix(patch,
 					tempPatch,
 					eigVecs,
 					1, N, models[best].r,
 					false, true);
 
+			// Add back the DC component
 			for(int d = 0; d < N; ++d)
 				patch[d] += means[k];
 
+			// Aggregate the result on the result image
 			for(int dc = 0, d = 0; dc < psc; ++dc)	
 			for(int dx = 0;        dx < ps; ++dx)	
 			for(int dy = 0;        dy < ps; ++dy, ++d)	
@@ -210,120 +213,24 @@ void aprxMAPGMM(Video<float>& noiseI, Video<float>& tempI, float sigma, int ps, 
 		}
 	}
 
-//	std::vector<std::vector<int> > assignement(models.size(), std::vector<int>());
-//	// Assign each patch to its best model
-//	k = 0;
-//	for(int x = 0; x < noiseI.sz.width; ++x)	
-//	for(int y = 0; y < noiseI.sz.height; ++y)	
-//	for(int t = 0; t < noiseI.sz.frames; ++t)	
-//	for(int c = 0; c < noiseI.sz.channels; ++c)	
-//	{
-//		if(mask(x,y,t,c) == 1)
-//		{
-//			// Select the best Gaussian
-//			int best = 0;
-//			float bestv = weights[0][k];
-//			for(int m = 1; m < models.size(); ++m)
-//			{
-//				if(weights[m][k] > bestv)
-//				{
-//					best = m;
-//					bestv = weights[m][k];
-//				}
-//			}
-//			assignement[best].push_back(k);
-//			++k;
-//		}
-//	}
-//
-//	std::vector<std::vector<float> > processPatches(models.size());
-//	for(int m = 0; m < models.size(); ++m)
-//	processPatches[m].resize(N*assignement[m].size());
-//
-//#ifdef _OPENMP
-//#pragma omp parallel for schedule(dynamic) num_threads(NTHREAD) \
-//	shared(weights, models)
-//#endif
-//	for(int m = 0; m < models.size(); ++m)
-//	{
-//		if(assignement[m].size() == 0)
-//			continue;
-//		
-//		// load the patches into a group
-//		// denoise them
-//		for(int p = 0; p < assignement[m].size(); ++p)
-//		for(int d = 0; d < N; ++d)
-//			processPatches[m][p + assignement[m].size()*d] = patches[assignement[m][p] + nbP*d];
-//
-//		std::vector<float> tempPatches(assignement.size() * models[m].r);
-//
-//		//! Z' = X'*U
-//		//productMatrix(tempPatches,
-//		//		processPatches[m],
-//		//		models[m].eigVects,
-//		//		assignement[m].size(), models[m].r, N,
-//		//		false, false);
-//
-//		////! U * W
-//		//std::vector<float> eigVecs(models[m].eigVects);
-//		//float *eigv = eigVecs.data();
-//		//for (unsigned k = 0; k < models[m].r; ++k)
-//		//	for (unsigned i = 0; i < N; ++i)
-//		//		*eigv++ *= (models[m].eigVals[k] / (models[m].eigVals[k] + sigma2));
-//
-//		////! hX' = Z'*(U*W)'
-//		//productMatrix(processPatches[m],
-//		//		tempPatches,
-//		//		eigVecs,
-//		//		assignement[m].size(), N, models[m].r,
-//		//		false, true);
-//	}
-//
-//	for(int m = 0; m < models.size(); ++m)
-//	{
-//		for(int p = 0; p < assignement[m].size(); ++p)
-//		{
-//			for(int d = 0; d < N; ++d)	
-//				patches[assignement[m][p] + nbP*d] = processPatches[m][p + assignement[m].size()*d];
-//		}
-//	}
-//
-//	k = 0;
-//	for(int x = 0; x < noiseI.sz.width; ++x)	
-//	for(int y = 0; y < noiseI.sz.height; ++y)	
-//	for(int t = 0; t < noiseI.sz.frames; ++t)	
-//	for(int c = 0; c < noiseI.sz.channels; ++c)	
-//	{
-//		if(mask(x,y,t,c) == 1)
-//		{
-//			// Aggregate back all elements from patches
-//			for(int dx = 0, d = 0; dx < ps; ++dx)	
-//			for(int dy = 0;        dy < ps; ++dy)	
-//			for(int dc = 0;        dc < psc; ++dc, ++d)	
-//			{
-//				tempI(x+dx,y+dy,t,c+dc) += patches[k + nbP*d] + means[k];
-//				count(x+dx,y+dy,t,c+dc)++;
-//			}
-//			++k;
-//		}
-//	}
-
+	// Finish the aggregation by averaging all contribution
 	for(int x = 0; x < noiseI.sz.width; ++x)	
 	for(int y = 0; y < noiseI.sz.height; ++y)	
 	for(int t = 0; t < noiseI.sz.frames; ++t)	
 	for(int c = 0; c < noiseI.sz.channels; ++c)	
 		tempI(x,y,t,c) /= count(x,y,t,c);
-
-	count.saveVideo("count.tiff", 1, 1);
 }
 
 void loggausspdf(std::vector<float>& patches, int dim, int nbP, Model& model, float csta, std::vector<float>& results)
 {
+	// Initialize the results
 	for(int p = 0; p < nbP; ++p)
 		results[p] = 0.;
 
 	std::vector<float> output(patches.size());
 
+	// For all patches provided: compute the log of the probability for the given Gaussian distribution
+	// First compute x.U.sqrt(D)
 	productMatrix(output,
 			patches,
 			model.invSqrtCov,
@@ -332,6 +239,7 @@ void loggausspdf(std::vector<float>& patches, int dim, int nbP, Model& model, fl
 
 	for(int p = 0; p < nbP; ++p)
 	{
+		// Compute xSx^T=(x.U.sqrt(D)) . (x.U.sqrt(D))^T
 		for(int d = 0; d < dim; ++d)
 			results[p] -= output[p + nbP*d]*output[p + nbP*d];
 

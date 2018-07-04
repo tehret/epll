@@ -8,7 +8,6 @@ add_library(epll SHARED
 	../Utilities/io_png.c
 	../Utilities/iio.c
 	../Utilities/LibImages.cpp
-	../Utilities/LibVideoT.cpp
 	../Utilities/mt19937ar.c
 	../Utilities/Utilities.cpp
 	)

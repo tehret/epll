@@ -1,7 +1,5 @@
 /*
- * Original work: Copyright (c) 2013, Marc Lebrun <marc.lebrun.ik@gmail.com>
- * Modified work: Copyright (c) 2014, Pablo Arias <pariasm@gmail.com>
- * Modified work: Copyright (c) 2016, Thibaud Ehret <ehret.thibaud@gmail.com>
+ * Original work: Copyright (c) 2016, Thibaud Ehret <ehret.thibaud@gmail.com>
  * All rights reserved.
  *
  * This program is free software: you can use, modify and/or
@@ -22,7 +20,7 @@
 
 #include "Utilities/Utilities.h"
 #include "Utilities/cmd_option.h"
-#include "Utilities/LibVideoT.hpp"
+#include "Utilities/LibImages.h"
 
 using namespace std;
 
@@ -38,21 +36,21 @@ int main(int argc, char **argv)
 	clo_usage("Compute PSNR");
 	clo_help(" NOTE: Input (<) and output (>) sequences are specified by their paths in printf format.\n");
 
-	//! Paths to input/output sequences
+	//! Paths to input images
 	using std::string;
 	const string  input_path = clo_option("-i"    , ""              , "< input sequence");
 	const string  inbsc_path = clo_option("-r"    , ""              , "< input sequence 2");
-	int firstFrame = 1, lastFrame = 1, frameStep = 1;
 
 	//! Declarations
-	Video<float> original, final;
+	std::vector<float> original, final;
+	ImageSize imSize;
 
-	//! Load input videos
-	original.loadVideo(input_path, firstFrame, lastFrame, frameStep);
-	final.loadVideo(inbsc_path, firstFrame, lastFrame, frameStep);
+	//! Load input image
+	loadImage(input_path.c_str(), original, imSize);
+	loadImage(inbsc_path.c_str(), final, imSize);
 
-	float final_psnr = -1, final_rmse = -1, basic_psnr = -1, basic_rmse = -1;
-	VideoUtils::computePSNR(original, final, final_psnr, final_rmse, 255.);
+	float final_psnr = -1, final_rmse = -1;
+	computePsnr(original, final, final_psnr, final_rmse, 255.);
 	printf("final PSNR =\t%f\tRMSE =\t%f\n", final_psnr, final_rmse);
 
 	return EXIT_SUCCESS;

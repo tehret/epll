@@ -117,7 +117,6 @@ int loadImage(
  * @param p_name : path+name+extension of the image;
  * @param i_im : vector which contains the image;
  * @param p_imSize : size of the image;
- * @param p_min, p_max : range of data (usually [0, 255]).
  *
  * @return EXIT_SUCCESS if the image has been saved, EXIT_FAILURE otherwise
  **/
@@ -125,8 +124,6 @@ int saveImage(
     char* p_name
 ,   std::vector<float> const& i_im
 ,   const ImageSize &p_imSize
-,   const float p_min
-,   const float p_max
 ){
     //! Allocate Memory
     float* imTmp = new float[p_imSize.whc];
@@ -136,13 +133,9 @@ int saveImage(
     unsigned h = p_imSize.height;
 
     //! Check for boundary problems
-    //for (unsigned k = 0; k < p_imSize.whc; k++) {
-    //    imTmp[k] = clip(i_im[k], p_min, p_max);
-    //}
     for (unsigned ch = 0, k = 0; ch < c; ch++)
     for (unsigned y = 0; y < h; y++) {
     for (unsigned x = 0; x < w; x++, k++)
-        //imTmp[ch + x * c + y * c * w] = clip(i_im[k], p_min, p_max);
         imTmp[ch + x * c + y * c * w] = i_im[k];
     }
 
@@ -214,28 +207,17 @@ int computePsnr(
 ,   std::vector<float> const& i_im2
 ,   float &o_psnr
 ,   float &o_rmse
-,   const char* p_imageName
-,   const bool p_verbose
+,   const float i_max = 1.
 ){
     if (i_im1.size() != i_im2.size()) {
-        cout << "Can't compute PSNR & RMSE: images have different sizes: " << endl;
-        cout << "i_im1 : " << i_im1.size() << endl;
-        cout << "i_im2 : " << i_im2.size() << endl;
         return EXIT_FAILURE;
     }
-
     float sum = 0.f;
     for (unsigned k = 0; k < i_im1.size(); k++)
         sum += (i_im1[k] - i_im2[k]) * (i_im1[k] - i_im2[k]);
 
     o_rmse = sqrtf(sum / (float) i_im1.size());
-    o_psnr = 20.f * log10f(255.f / o_rmse);
-
-    if (p_verbose) {
-        cout << p_imageName << endl;
-        cout << "PSNR = " << o_psnr << endl;
-        cout << "RMSE = " << o_rmse << endl;
-    }
+    o_psnr = 20.f * log10f(i_max / o_rmse);
 
     return EXIT_SUCCESS;
 }
@@ -257,19 +239,9 @@ int computeDiff(
 ,   std::vector<float> const& i_im2
 ,   std::vector<float> &o_imDiff
 ,   const float p_sigma
-,   const float p_min
-,   const float p_max
-,   const bool p_verbose
 ){
     if (i_im1.size() != i_im2.size()) {
-        cout << "Can't compute difference, i_im1 and i_im2 don't have the same size" << endl;
-        cout << "i_im1 : " << i_im1.size() << endl;
-        cout << "i_im2 : " << i_im2.size() << endl;
         return EXIT_FAILURE;
-    }
-
-    if (p_verbose) {
-        cout << "Compute difference..." << endl;
     }
 
     const unsigned size = i_im1.size();
@@ -278,12 +250,7 @@ int computeDiff(
     }
 
     for (unsigned k = 0; k < size; k++) {
-        float value =  (i_im1[k] - i_im2[k] + p_sigma) * p_max / (2.f * p_sigma);
-        o_imDiff[k] = clip(value, p_min, p_max);
-    }
-
-    if (p_verbose) {
-        cout << "done." << endl;
+        o_imDiff[k] =  (i_im1[k] - i_im2[k] + p_sigma) * p_max / (2.f * p_sigma);
     }
 
     return EXIT_SUCCESS;

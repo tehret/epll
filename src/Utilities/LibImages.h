@@ -65,8 +65,6 @@ int saveImage(
     char* p_name
 ,   std::vector<float> const& i_im
 ,   const ImageSize &p_imSize
-,   const float p_min
-,   const float p_max
 );
 
 /**
@@ -102,8 +100,6 @@ int computePsnr(
 ,   std::vector<float> const& i_im2
 ,   float &o_psnr
 ,   float &o_rmse
-,   const char* p_imageName
-,   const bool p_verbose
 );
 
 /**
@@ -123,9 +119,6 @@ int computeDiff(
 ,   std::vector<float> const& i_im2
 ,   std::vector<float> &o_imDiff
 ,   const float p_sigma
-,   const float p_min
-,   const float p_max
-,   const bool p_verbose
 );
 
 /**
