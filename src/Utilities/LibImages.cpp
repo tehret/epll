@@ -45,7 +45,7 @@ using namespace std;
  * @return EXIT_SUCCESS if the image has been loaded, EXIT_FAILURE otherwise.
  **/
 int loadImage(
-	char* p_name
+	const char* p_name
 ,	std::vector<float> &o_im
 ,	ImageSize &o_imSize
 ,	const bool p_verbose
@@ -121,7 +121,7 @@ int loadImage(
  * @return EXIT_SUCCESS if the image has been saved, EXIT_FAILURE otherwise
  **/
 int saveImage(
-    char* p_name
+    const char* p_name
 ,   std::vector<float> const& i_im
 ,   const ImageSize &p_imSize
 ){
@@ -239,6 +239,7 @@ int computeDiff(
 ,   std::vector<float> const& i_im2
 ,   std::vector<float> &o_imDiff
 ,   const float p_sigma
+,   const float p_max
 ){
     if (i_im1.size() != i_im2.size()) {
         return EXIT_FAILURE;

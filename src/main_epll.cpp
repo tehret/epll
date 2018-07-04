@@ -80,7 +80,7 @@ int main(int argc, char **argv)
 	ImageSize imSize;
 
 	//! Load input videos
-	loadImage(input_path, original, imSize, verbose);
+	loadImage(input_path.c_str(), original, imSize, verbose);
 
 
 	//! Add noise
@@ -89,7 +89,7 @@ int main(int argc, char **argv)
 		addNoise(original, noisy, sigma, verbose);
 
 		//! Save noisy image
-		saveImage(noisy_path, noisy, imSize);
+		saveImage(noisy_path.c_str(), noisy, imSize);
 	}
 	else
 		noisy = original;
@@ -142,18 +142,15 @@ int main(int argc, char **argv)
 	if (verbose) printf("Running EPLL on the noisy image\n");
 
 	// Computation is done on images ranging in [0,1] contrary to the usual [0,255]
-	for(int x = 0; x < noisy.sz.width; ++x)	
-	for(int y = 0; y < noisy.sz.height; ++y)	
-	for(int t = 0; t < noisy.sz.frames; ++t)	
-	for(int c = 0; c < noisy.sz.channels; ++c)	
+	for(int i = 0; i < noisy.size(); ++i)	
 	{
-		noisy(x,y,t,c) /= 255;
-		original(x,y,t,c) /= 255;
+		noisy[i] /= 255;
+		original[i] /= 255;
 	}
 	
 
 	//! Run denoising algorithm
-	EPLLhalfQuadraticSplit(noisy, final, original, partialPSNR, sigma, patch_size, patch_size_channels, betas, iter, step, models);
+	EPLLhalfQuadraticSplit(noisy, final, original, imSize, partialPSNR, sigma, patch_size, patch_size_channels, betas, iter, step, models);
 
 	//! Compute PSNR and RMSE
 	float final_psnr = -1, final_rmse = -1;
@@ -165,13 +162,10 @@ int main(int argc, char **argv)
 	computeDiff(original, final, diff, sigma);
 
 	// Go back to the usual range [0,255] before saving the images
-	for(int x = 0; x < noisy.sz.width; ++x)	
-	for(int y = 0; y < noisy.sz.height; ++y)	
-	for(int t = 0; t < noisy.sz.frames; ++t)	
-	for(int c = 0; c < noisy.sz.channels; ++c)	
+	for(int i = 0; i < noisy.size(); ++i)	
 	{
-		final(x,y,t,c) *= 255.;
-		diff(x,y,t,c) *= 255.;
+		final[i] *= 255.;
+		diff[i] *= 255.;
 	}
 
 
@@ -182,8 +176,8 @@ int main(int argc, char **argv)
 	}
 
 	//! Save output sequences
-	saveVideo(final, final_path, firstFrame, frameStep);
-	saveVideo( diff_path, firstFrame, frameStep);
+	saveImage(final_path.c_str(), final,  imSize);
+	saveImage(diff_path.c_str(), diff,   imSize);
 
 	printf("Done\n");
 	return EXIT_SUCCESS;

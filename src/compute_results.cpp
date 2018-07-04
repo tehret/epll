@@ -25,24 +25,28 @@
 using namespace std;
 
 /**
- * @file   compute_psnr.cpp
- * @brief  Compute the PSNR between two image
+ * @file   compute_results.cpp
+ * @brief  Compute the PSNR and difference between two images
  *
  * @author THIBAUD EHRET <ehret.thibaud@gmail.com>
  **/
 
 int main(int argc, char **argv)
 {
-	clo_usage("Compute PSNR");
+	clo_usage("Compute PSNR and difference");
 	clo_help(" NOTE: Input (<) and output (>) sequences are specified by their paths in printf format.\n");
 
 	//! Paths to input images
 	using std::string;
-	const string  input_path = clo_option("-i"    , ""              , "< input sequence");
-	const string  inbsc_path = clo_option("-r"    , ""              , "< input sequence 2");
+	const string  input_path   = clo_option("-i", "", "< input sequence");
+	const string  inbsc_path   = clo_option("-r", "", "< input sequence 2");
+	const float   sigma        = clo_option("-s", 20., "< noise std");
+	const string  outpsnr_path = clo_option("-f", "", "> where to write the PSNR informations");
+	const string  outdiff_path = clo_option("-o", "", "> where to write the diff image");
+	const string  comment      = clo_option("-m", "", "> comment before printing the result, used for formatting");
 
 	//! Declarations
-	std::vector<float> original, final;
+	std::vector<float> original, final, diff;
 	ImageSize imSize;
 
 	//! Load input image
@@ -51,7 +55,14 @@ int main(int argc, char **argv)
 
 	float final_psnr = -1, final_rmse = -1;
 	computePsnr(original, final, final_psnr, final_rmse, 255.);
-	printf("final PSNR =\t%f\tRMSE =\t%f\n", final_psnr, final_rmse);
+	computeDiff(original, final, diff, sigma);
+	saveImage(outdiff_path.c_str(), diff, imSize);
+
+	ofstream file;
+	file.open(outpsnr_path, ios::out | ios::ate);
+	file << comment;
+	file << "PSNR =\t" << final_psnr << "\tRMSE =\t"<< final_rmse << endl;
+	file.close();
 
 	return EXIT_SUCCESS;
 }

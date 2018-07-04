@@ -45,6 +45,7 @@ struct Model{
  * @param noiseI : Image that need denoising
  * @param finalI : Stores the output image
  * @param origI : Non-noisy image to compute PSNRs
+ * @param imSize : Size of the image
  * @param partialPSNR : Print partial PSNR to show the evolution when going through iterations and betas 
  * @param noiseSD : Standard deviation of the noise
  * @param patchsize : Spatial size of the patch
@@ -54,20 +55,21 @@ struct Model{
  * @param pas : Step of the spatial grid used to extract the patches in the image
  * @param models : Stores the Gaussian mixture model (one Gaussian per entry of the array)
  **/
-void EPLLhalfQuadraticSplit(std::vector<float>& noiseI, std::vector<float>& finalI, std::vector<float>& origI, bool partialPSNR, float noiseSD, int patchsize, int patchsizeChannels, std::vector<float> betas, int T, int pas, std::vector<Model>& models);
+void EPLLhalfQuadraticSplit(std::vector<float>& noiseI, std::vector<float>& finalI, std::vector<float>& origI, ImageSize& imSize, bool partialPSNR, float noiseSD, int patchsize, int patchsizeChannels, std::vector<float> betas, int T, int pas, std::vector<Model>& models);
 
 /**
  * @brief Compute the approximative maximum a priori image reconstructed using the Gaussian mixture model represented by models
  *
  * @param noiseI : Image that need denoising
  * @param tempI : Store the results of the reconstruction
+ * @param imSize : Size of the image
  * @param sigma : Standard deviation of the noise
  * @param ps : Spatial size of the patch
  * @param psc : Number of channel to use for the denoising (defined by the model)
  * @param step : Step of the spatial grid used to extract the patches in the image
  * @param models : Stores the Gaussian mixture model (one Gaussian per entry of the array)
  **/
-void aprxMAPGMM(std::vector<float>& noiseI, std::vector<float>& tempI, float sigma, int ps, int psc, int step, std::vector<Model>& models);
+void aprxMAPGMM(std::vector<float>& noiseI, std::vector<float>& tempI, ImageSize& imSize, float sigma, int ps, int psc, int step, std::vector<Model>& models);
 
 /**
  * @brief Compute the Gaussiian log pdf for different patches, the weight of the given Gaussian inside the GMM is taken into account

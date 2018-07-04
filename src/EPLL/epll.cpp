@@ -34,7 +34,7 @@
 #include <omp.h>
 #endif
 
-void EPLLhalfQuadraticSplit(Video<float>& noiseI, Video<float>& finalI, Video<float>& origI, bool partialPSNR, float noiseSD, int patchsize, int patchsizeChannels, std::vector<float> betas, int T, int pas, std::vector<Model>& models)
+void EPLLhalfQuadraticSplit(std::vector<float>& noiseI, std::vector<float>& finalI, std::vector<float>& origI, ImageSize& imSize, bool partialPSNR, float noiseSD, int patchsize, int patchsizeChannels, std::vector<float> betas, int T, int pas, std::vector<Model>& models)
 {
 	int N = patchsize*patchsize;
 
@@ -44,56 +44,52 @@ void EPLLhalfQuadraticSplit(Video<float>& noiseI, Video<float>& finalI, Video<fl
 	{
 		for(int it = 0; it < T; ++it)
 		{
-			Video<float> tempI(noiseI.sz, 0.);
+			std::vector<float> tempI(noiseI.size(), 0.);
 			float sigma = noiseSD/std::sqrt(betas[i]);
 			sigma /= 255.;
 
 			// Compute the maximum a posteriori estimation of the set of patches in finalI for the given pre-learned GMM model
-			aprxMAPGMM(finalI, tempI, sigma, patchsize, patchsizeChannels, pas, models);
+			aprxMAPGMM(finalI, tempI, imSize, sigma, patchsize, patchsizeChannels, pas, models);
 
 			// Update the final estimate by combining the noisy image and the current estimate
-			for(int x = 0; x < finalI.sz.width; ++x)	
-			for(int y = 0; y < finalI.sz.height; ++y)	
-			for(int t = 0; t < finalI.sz.frames; ++t)	
-			for(int c = 0; c < finalI.sz.channels; ++c)	
-				finalI(x,y,t,c) = (noiseI(x,y,t,c) + betas[i]*tempI(x,y,t,c))/(1. + betas[i]);
+			for(int k = 0; k < finalI.size(); ++k)	
+				finalI[k] = (noiseI[k] + betas[i]*tempI[k])/(1. + betas[i]);
 
 			// Print partial PSNR to track the improvement
 			if(partialPSNR)
 			{
 				float psnr, rmse;
-				VideoUtils::computePSNR(finalI, origI, psnr, rmse);
+				computePsnr(finalI, origI, psnr, rmse, 1.);
 				float psnr2, rmse2;
-				VideoUtils::computePSNR(tempI, origI, psnr2, rmse2);
+				computePsnr(tempI, origI, psnr2, rmse2, 1.);
 				printf("Beta = \t%f, Iter =\t%d  PSNR =\t%f RMSE =\t%f (temporary image PSNR =\t%f RMSE =\t%f)\n", betas[i], it, psnr, 255.*rmse, psnr2, 255.*rmse2);
 			}
 		}
 	}
 }
 
-void aprxMAPGMM(Video<float>& noiseI, Video<float>& tempI, float sigma, int ps, int psc, int step, std::vector<Model>& models)
+void aprxMAPGMM(std::vector<float>& noiseI, std::vector<float>& tempI, ImageSize& imSize, float sigma, int ps, int psc, int step, std::vector<Model>& models)
 {
 	int N = ps*ps*psc;
 	float sigma2 = sigma*sigma;
-	Video<float> count(noiseI.sz);
+	std::vector<float> count(noiseI.size());
 
 	std::vector<float> tempPatch(N);
 	std::vector<float> patch(N);
 	std::vector<float> tempVects;
 
-	Video<int> mask(noiseI.sz.width, noiseI.sz.height, noiseI.sz.frames, noiseI.sz.channels, 0);
+	std::vector<int> mask(imSize.width*imSize.height*imSize.nChannels, 0);
 
 	// Compute the mask of patches that need denoising 
 	int nbP = 0;
-	for(int x = 0; x <= noiseI.sz.width-ps; ++x)	
-	for(int y = 0; y <= noiseI.sz.height-ps; ++y)	
-	for(int t = 0; t < noiseI.sz.frames; ++t)	
-	for(int c = 0; c <= noiseI.sz.channels-psc; ++c)	
+	for(int x = 0; x <= imSize.width-ps; ++x)	
+	for(int y = 0; y <= imSize.height-ps; ++y)	
+	for(int c = 0; c <= imSize.nChannels-psc; ++c)	
 	{
-		if((x % step == 0) || (x == noiseI.sz.width-ps))
-		if((y % step == 0) || (y == noiseI.sz.height-ps))
+		if((x % step == 0) || (x == imSize.width-ps))
+		if((y % step == 0) || (y == imSize.height-ps))
 		{
-			mask(x,y,t,c) = 1;
+			mask[x*imSize.nChannels + y*imSize.width*imSize.nChannels + c] = 1;
 			++nbP;
 		}
 	}
@@ -117,21 +113,20 @@ void aprxMAPGMM(Video<float>& noiseI, Video<float>& tempI, float sigma, int ps, 
 			*invSqrtCov++ = (*eigv++) / std::sqrt(sigma2 + models[m].eigVals[k]);
 	}
 
-	// Compute the denoised patches
+	// Extract patches
 	int k = 0;
-	for(int x = 0; x < noiseI.sz.width; ++x)	
-	for(int y = 0; y < noiseI.sz.height; ++y)	
-	for(int t = 0; t < noiseI.sz.frames; ++t)	
-	for(int c = 0; c < noiseI.sz.channels; ++c)	
+	for(int x = 0; x < imSize.width; ++x)	
+	for(int y = 0; y < imSize.height; ++y)	
+	for(int c = 0; c < imSize.nChannels; ++c)	
 	{
-		if(mask(x,y,t,c) == 1)
+		if(mask[x*imSize.nChannels + y*imSize.width*imSize.nChannels + c] == 1)
 		{
 			// Compute the DC component (average patch)
 			means[k] = 0.f;
 			for(int dc = 0; dc < psc; ++dc)
 			for(int dx = 0; dx < ps; ++dx)
 			for(int dy = 0; dy < ps; ++dy)
-				means[k] += noiseI(x+dx,y+dy,t,c+dc);
+				means[k] += noiseI[(x+dx)*imSize.nChannels + (y+dy)*imSize.width*imSize.nChannels + c+dc];
 
 			means[k] /= (float)N;
 
@@ -139,7 +134,7 @@ void aprxMAPGMM(Video<float>& noiseI, Video<float>& tempI, float sigma, int ps, 
 			for(int dc = 0, d = 0; dc < psc; ++dc)	
 			for(int dx = 0;        dx < ps; ++dx)	
 			for(int dy = 0;        dy < ps; ++dy, ++d)	
-				patches[k + nbP*d] = (noiseI(x+dx,y+dy,t,c+dc) - means[k]);
+				patches[k + nbP*d] = (noiseI[(x+dx)*imSize.nChannels + (y+dy)*imSize.width*imSize.nChannels + c+dc] - means[k]);
 			++k;
 		}
 	}
@@ -156,13 +151,12 @@ void aprxMAPGMM(Video<float>& noiseI, Video<float>& tempI, float sigma, int ps, 
 
 	// Compute the denoised patches
 	k = 0;
-	for(int x = 0; x < noiseI.sz.width; ++x)	
-	for(int y = 0; y < noiseI.sz.height; ++y)	
-	for(int t = 0; t < noiseI.sz.frames; ++t)	
-	for(int c = 0; c < noiseI.sz.channels; ++c)	
+	for(int x = 0; x < imSize.width; ++x)	
+	for(int y = 0; y < imSize.height; ++y)	
+	for(int c = 0; c < imSize.nChannels; ++c)	
 	{
 		// If this patch requires denoising
-		if(mask(x,y,t,c) == 1)
+		if(mask[x*imSize.nChannels + y*imSize.width*imSize.nChannels + c] == 1)
 		{
 			// Select the best Gaussian based on the probability estimated for each Gaussian of the GMM (weights of the GMM are taken into account)
 			int best = 0;
@@ -206,19 +200,16 @@ void aprxMAPGMM(Video<float>& noiseI, Video<float>& tempI, float sigma, int ps, 
 			for(int dx = 0;        dx < ps; ++dx)	
 			for(int dy = 0;        dy < ps; ++dy, ++d)	
 			{
-				tempI(x+dx,y+dy,t,c+dc) += patch[d];
-				count(x+dx,y+dy,t,c+dc)++;
+				tempI[(x+dx)*imSize.nChannels + (y+dy)*imSize.width*imSize.nChannels + c+dc] += patch[d];
+				count[(x+dx)*imSize.nChannels + (y+dy)*imSize.width*imSize.nChannels + c+dc]++;
 			}
 			++k;
 		}
 	}
 
 	// Finish the aggregation by averaging all contribution
-	for(int x = 0; x < noiseI.sz.width; ++x)	
-	for(int y = 0; y < noiseI.sz.height; ++y)	
-	for(int t = 0; t < noiseI.sz.frames; ++t)	
-	for(int c = 0; c < noiseI.sz.channels; ++c)	
-		tempI(x,y,t,c) /= count(x,y,t,c);
+	for(int k = 0; k < tempI.size(); ++k)	
+		tempI[k] /= count[k];
 }
 
 void loggausspdf(std::vector<float>& patches, int dim, int nbP, Model& model, float csta, std::vector<float>& results)
