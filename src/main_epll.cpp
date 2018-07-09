@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <fstream>
+#include <cmath>
 
 #include <string>
 #include <sstream>
@@ -53,12 +54,12 @@ int main(int argc, char **argv)
 	const bool  add_noise = clo_option("-add", true, "< add noise of given standard deviation sigma");
 	const int   patch_size  = clo_option("-ps",    8, "< patch size. It must be the same than the one of the model");
 	const int   patch_size_channels  = clo_option("-psc",   1, "< number of channel of the model (1 for a learning in grayscale and 3 for one in color). It must be the same than the one of the model");
-	const int   step        = std::max(patch_size, clo_option("-st",    1, "< step size"));
+	const int   step        = std::min(patch_size, clo_option("-st",    1, "< step size"));
 	const int   iter        = clo_option("-T",     1, "< nb iter");
 	const bool  partialPSNR = clo_option("-psnr", true, "< print partial PSNR");
 
 	const bool  changeBasis = clo_option("-yuv", false, "< change the RGB basis to YUV if color image");
-	const int   rank        = clo_option("-r", 1000000000, "< maximum rank used for the covariance of the Gaussians");
+	const int   rank        = clo_option("-r", 100, "< maximum rank used for the covariance of the Gaussians (in percentage)");
 
 
 	int firstFrame = 1, lastFrame = 1, frameStep = 1;
@@ -123,7 +124,7 @@ int main(int argc, char **argv)
 		current.eigVects.resize(N*N);
 		current.invSqrtCov.resize(N*N);
 		current.eigVals.resize(N);
-		current.r = std::min(N, rank);
+		current.r = N*rank;
 
 		std::vector<float> covMat(N*N);
 		for(int d = 0; d < N*N; ++d)
