@@ -38,12 +38,14 @@ int main(int argc, char **argv)
 
 	//! Paths to input images
 	using std::string;
-	const string  input_path   = clo_option("-i", "", "< input sequence");
-	const string  inbsc_path   = clo_option("-r", "", "< input sequence 2");
-	const float   sigma        = clo_option("-s", 20., "< noise std");
-	const string  outpsnr_path = clo_option("-f", "", "> where to write the PSNR informations");
-	const string  outdiff_path = clo_option("-o", "", "> where to write the diff image");
-	const string  comment      = clo_option("-m", "", "> comment before printing the result, used for formatting");
+	const string  input_path   = clo_option("-i" , "" , "< input sequence");
+	const string  inbsc_path   = clo_option("-r" , "" , "< input sequence 2");
+	const float   sigma        = clo_option("-s" , 20., "< noise std");
+	const string  outpsnr_path = clo_option("-f" , "" , "> where to write the PSNR informations");
+	const string  out_path     = clo_option("-o1", "" , "> where to write the original image (used for tiff to png transformation)");
+	const string  outdiff_path = clo_option("-o2", "" , "> where to write the diff image");
+	const string  comment      = clo_option("-m" , "" , "> comment before printing the result, used for formatting");
+
 
 	//! Declarations
 	std::vector<float> original, final, diff;
@@ -51,7 +53,9 @@ int main(int argc, char **argv)
 
 	//! Load input image
 	loadImage(input_path.c_str(), original, imSize);
-	loadImage(inbsc_path.c_str(), final, imSize);
+	loadImage(inbsc_path.c_str(),    final, imSize);
+
+	saveImage(out_path.c_str(),      final, imSize);
 
 	float final_psnr = -1, final_rmse = -1;
 	computePsnr(original, final, final_psnr, final_rmse, 255.);
@@ -59,9 +63,9 @@ int main(int argc, char **argv)
 	saveImage(outdiff_path.c_str(), diff, imSize);
 
 	ofstream file;
-	file.open(outpsnr_path, ios::out | ios::ate);
+	file.open(outpsnr_path, ios::app);
 	file << comment;
-	file << "PSNR =\t" << final_psnr << "\tRMSE =\t"<< final_rmse << endl;
+	file << "\tPSNR =\t" << final_psnr << ",\tRMSE =\t"<< final_rmse << endl;
 	file.close();
 
 	return EXIT_SUCCESS;

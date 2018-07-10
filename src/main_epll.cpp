@@ -124,7 +124,7 @@ int main(int argc, char **argv)
 		current.eigVects.resize(N*N);
 		current.invSqrtCov.resize(N*N);
 		current.eigVals.resize(N);
-		current.r = N*std::max(std::min(rank,100),0)/100.;
+		current.r = std::min(std::max(N*rank/100,1),N);
 
 		std::vector<float> covMat(N*N);
 		for(int d = 0; d < N*N; ++d)

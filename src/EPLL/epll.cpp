@@ -44,7 +44,7 @@ void EPLLhalfQuadraticSplit(std::vector<float>& noiseI, std::vector<float>& fina
 	{
 		for(int it = 0; it < T; ++it)
 		{
-			std::vector<float> tempI(noiseI.size(), 0.);
+			std::vector<float> tempI(finalI.size(), 0.);
 			float sigma = noiseSD/std::sqrt(betas[i]);
 			sigma /= 255.;
 

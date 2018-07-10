@@ -17,7 +17,9 @@
 #        2            # R_PYR pyramid ratio: 2 (optional)
 #        0.7          # PAR_PYR recomposition ratio : 0.7 (optional)
 
-set -x
+#set -x
+#set -u
+#set -e
 
 if [ $# -lt 4 ]; then
    echo "$0 noisy.tif sigma out.tif"
@@ -50,17 +52,18 @@ DEC_ARGS="-r ${R_PYR}"
 MS_ARGS="-c ${PAR_PYR}"
 
 # Create the noisy version of the image
-./main_epll -i ${INPUT} -sigma $NOISE ${EPLL_ARGS} -ps 0
+main_epll -i ${INPUT} -sigma $NOISE -ps 0
 
 # Decompose the noisy image into the LEVELS scales requested
-./decompose noisy.tiff level_ ${LEVELS} .tiff ${DEC_ARGS}
+decompose noisy.tiff level_ ${LEVELS} .tiff ${DEC_ARGS}
 
 # Denoise each scale independently, while taking into account the different noise level for a given scale
 for ((lvl=LEVELS-1; lvl>=0; --lvl))
 do
   sigma=$(bc <<< "scale=2; $NOISE / ${R_PYR}^$lvl")
-  ./main_epll -i level_${lvl}.tiff -sigma ${sigma} -deno level_${lvl}_non.png ${EPLL_ARGS} -add false -psnr false
+  main_epll -i level_${lvl}.tiff -sigma ${sigma} -deno level_${lvl}_non.tiff ${EPLL_ARGS} -add false -psnr false
 done
 
-# Compose the final result from the indenpendent denoised results 
-./recompose level_ ${LEVELS} _non.png $OUTPUT ${MS_ARGS}
+# Compose the final result from the independent denoised results 
+recompose level_ ${LEVELS} _non.tiff $OUTPUT ${MS_ARGS}
+
