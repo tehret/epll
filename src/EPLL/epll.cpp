@@ -36,8 +36,6 @@
 
 void EPLLhalfQuadraticSplit(std::vector<float>& noiseI, std::vector<float>& finalI, std::vector<float>& origI, ImageSize& imSize, bool partialPSNR, float noiseSD, int patchsize, int patchsizeChannels, std::vector<float> betas, int T, int pas, std::vector<Model>& models)
 {
-	int N = patchsize*patchsize;
-
 	finalI = noiseI;
 
 	for(int i = 0; i < betas.size(); ++i)
@@ -80,11 +78,12 @@ void aprxMAPGMM(std::vector<float>& noiseI, std::vector<float>& tempI, ImageSize
 
 	std::vector<int> mask(imSize.width*imSize.height*imSize.nChannels, 0);
 
+
 	// Compute the mask of patches that need denoising 
 	int nbP = 0;
-	for(int x = 0; x <= imSize.width-ps; ++x)	
-	for(int y = 0; y <= imSize.height-ps; ++y)	
 	for(int c = 0; c <= imSize.nChannels-psc; ++c)	
+	for(int y = 0; y <= imSize.height-ps; ++y)	
+	for(int x = 0; x <= imSize.width-ps; ++x)	
 	{
 		if((x % step == 0) || (x == imSize.width-ps))
 		if((y % step == 0) || (y == imSize.height-ps))
@@ -108,24 +107,24 @@ void aprxMAPGMM(std::vector<float>& noiseI, std::vector<float>& tempI, ImageSize
 
 		float *invSqrtCov = models[m].invSqrtCov.data();
 		float *eigv = models[m].eigVects.data();
-		for (unsigned k = 0, plouf = 0; k < models[m].r; ++k)
-		for (unsigned i = 0; i < N; ++i, ++plouf)
+		for (unsigned k = 0; k < models[m].r; ++k)
+		for (unsigned i = 0; i < N; ++i)
 			*invSqrtCov++ = (*eigv++) / std::sqrt(sigma2 + models[m].eigVals[k]);
 	}
 
 	// Extract patches
 	int k = 0;
-	for(int x = 0; x < imSize.width; ++x)	
 	for(int y = 0; y < imSize.height; ++y)	
+	for(int x = 0; x < imSize.width; ++x)	
 	for(int c = 0; c < imSize.nChannels; ++c)	
 	{
 		if(mask[x*imSize.nChannels + y*imSize.width*imSize.nChannels + c] == 1)
 		{
 			// Compute the DC component (average patch)
 			means[k] = 0.f;
-			for(int dc = 0; dc < psc; ++dc)
-			for(int dx = 0; dx < ps; ++dx)
 			for(int dy = 0; dy < ps; ++dy)
+			for(int dx = 0; dx < ps; ++dx)
+			for(int dc = 0; dc < psc; ++dc)
 				means[k] += noiseI[(x+dx)*imSize.nChannels + (y+dy)*imSize.width*imSize.nChannels + c+dc];
 
 			means[k] /= (float)N;
@@ -151,8 +150,8 @@ void aprxMAPGMM(std::vector<float>& noiseI, std::vector<float>& tempI, ImageSize
 
 	// Compute the denoised patches
 	k = 0;
-	for(int x = 0; x < imSize.width; ++x)	
 	for(int y = 0; y < imSize.height; ++y)	
+	for(int x = 0; x < imSize.width; ++x)	
 	for(int c = 0; c < imSize.nChannels; ++c)	
 	{
 		// If this patch requires denoising

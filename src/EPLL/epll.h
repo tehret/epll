@@ -13,7 +13,7 @@
 #ifndef EPLL_H_INCLUDED
 #define EPLL_H_INCLUDED
 
-#define NTHREAD 32
+#define NTHREAD 16
 #define PI 3.1415926535
 
 #include <vector>

@@ -120,58 +120,6 @@ int computeDiff(
 ,   const float p_max = 255.
 );
 
-/**
- * @brief Add boundary by symetry.
- *
- * @param i_im : image to symetrize;
- * @param o_imSym : will contain i_img with symetrized boundaries;
- * @param p_imSize : size of i_im;
- * @param p_imSizeSym : size of o_imSym.
- *
- * @return none.
- **/
-int addBoundary(
-	std::vector<float> const& i_im
-,	std::vector<float> &o_imSym
-,	const ImageSize &p_imSize
-,	const ImageSize &p_imSizeSym
-);
-
-/**
- * @brief Remove boundaries added with addBoundary
- *
- * @param o_im : will contain the inner image;
- * @param i_imSym : contains i_im with symetrized boundaries;
- * @param p_imSize: size of o_im;
- * @param p_imSizeSym : size of i_imSym.
- *
- * @return none.
- **/
-int removeBoundary(
-	std::vector<float> &o_im
-,	std::vector<float> const& i_imSym
-,	const ImageSize &p_imSize
-,	const ImageSize &p_imSizeSym
-);
-
-/**
- * @brief Add boundaries by symetry
- *
- * @param io_im : original image;
- * @param io_imSym : contain io_im symetrized;
- * @param p_imSize : size of io_im;
- * @param p_borderSize : size of the boundary;
- * @param p_isForward: if true, build io_imSym, otherwise build io_im.
- *
- * @return none.
- **/
-void symetrizeImage(
-	std::vector<float> const& i_im1
-,	std::vector<float> &o_im2
-,	const ImageSize p_imSize
-,	const unsigned p_borderSize
-,	const bool p_isForward
-);
 
 /**
  * @brief Transform the color space of an image, from RGB to YUV, or vice-versa.
@@ -189,43 +137,18 @@ void transformColorSpace(
 );
 
 /**
- * @brief Subdivide an image into small sub-images
+ * @brief Clip the values of im_im between val_min and val_max.
  *
- * @param i_im : image to subdivide;
- * @param o_imSub : will contain all sub-images;
- * @param p_imSize : size of i_im;
- * @param p_imSizeSub : size of sub-images;
- * @param p_N : boundary around sub-images;
- * @param p_nb : number of sub-images wanted. Need to be a power of 2.
+ * @param io_im: image on which the cipping will be applied;
+ * @param val_min: minimum value;
+ * @param val_max: maximum value.
  *
- * @return EXIT_FAILURE in case of problems.
+ * @return none.
  **/
-int subDivide(
-	std::vector<float> const& i_im
-,	std::vector<std::vector<float> > &o_imSub
-,	const ImageSize &p_imSize
-,	ImageSize &p_imSizeSub
-,	const unsigned p_N
-,	const unsigned p_nb
-);
-
-/**
- * @brief Reconstruct an image from its small sub-images
- *
- * @param o_im : image to reconstruct;
- * @param i_imSub : will contain all sub-images;
- * @param p_imSize : size of o_im;
- * @param p_imSizeSub : size of sub-images;
- * @param p_N : boundary around sub-images.
- *
- * @return EXIT_FAILURE in case of problems.
- **/
-int subBuild(
-	std::vector<float> &o_im
-,	std::vector<std::vector<float> > const& i_imSub
-,	const ImageSize &p_imSize
-,	ImageSize &p_imSizeSub
-,	const unsigned p_N
+void clip(
+    std::vector<float> &io_im
+,   const float val_min
+,   const float val_max
 );
 
 #endif // LIB_IMAGES_H_INCLUDED

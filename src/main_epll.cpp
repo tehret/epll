@@ -31,7 +31,6 @@ using namespace std;
  * @file   main.cpp
  * @brief  Main executable file
  *
- *
  * @author THIBAUD EHRET  <ehret.thibaud@gmail.com>
  **/
 
@@ -65,7 +64,7 @@ int main(int argc, char **argv)
 	int firstFrame = 1, lastFrame = 1, frameStep = 1;
 	bool verbose = false;
 
-	// Defaults betas suggested in the original article
+	//! Defaults betas suggested in the original article
 	std::vector<float> betas{1,4,8,16,32}; 
 
 	//! Check inputs
@@ -104,8 +103,7 @@ int main(int argc, char **argv)
 		transformColorSpace(original, imSize, true);
 	}
 
-	// Loads the covs and the weights
-	
+	//! Loads the covs and the weights
 	FILE* wfile = fopen(w_model_path.c_str(), "r");
 	FILE* covfile = fopen(cov_model_path.c_str(), "r");
 
@@ -115,9 +113,9 @@ int main(int argc, char **argv)
 	float w;
 	int kpt = 0;
 
-	// Diagonalize the covariance matrices for the following computations. If speed is necessary, 
-	// these can be pre-saved diagonalized. In practice it this computation is quite fast anyway 
-	// and is in no way a bottleneck.
+	//! Diagonalize the covariance matrices for the following computations. If speed is necessary, 
+	//! these can be pre-saved diagonalized. In practice it this computation is quite fast anyway 
+	//! and is in no way a bottleneck.
 	while(fscanf(wfile, "%f,", &w) != EOF)
 	{
 		current.logweight = std::log(w);
@@ -142,16 +140,18 @@ int main(int argc, char **argv)
 	//! Denoising
 	if (verbose) printf("Running EPLL on the noisy image\n");
 
-	// Computation is done on images ranging in [0,1] contrary to the usual [0,255]
+	//! Computation is done on images ranging in [0,1] contrary to the usual [0,255]
 	for(int i = 0; i < noisy.size(); ++i)	
 	{
 		noisy[i] /= 255;
 		original[i] /= 255;
 	}
-	
 
 	//! Run denoising algorithm
 	EPLLhalfQuadraticSplit(noisy, final, original, imSize, partialPSNR, sigma, patch_size, patch_size_channels, betas, iter, step, models);
+
+    //! clip resulting image between 0 and 1
+    clip(final, 0., 1.);
 
 	//! Compute PSNR and RMSE
 	float final_psnr = -1, final_rmse = -1;
@@ -162,14 +162,14 @@ int main(int argc, char **argv)
 	//! Compute Difference
 	computeDiff(original, final, diff, sigma);
 
-	// Go back to the usual range [0,255] before saving the images
+	//! Go back to the usual range [0,255] before saving the images
 	for(int i = 0; i < noisy.size(); ++i)	
 	{
 		final[i] *= 255.;
 		diff[i] *= 255.;
 	}
 
-
+    //! Go back to RGB colorspace if necessary
 	if(changeBasis)
 	{
 		transformColorSpace(final, imSize, false);
