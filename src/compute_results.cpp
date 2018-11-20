@@ -41,9 +41,9 @@ int main(int argc, char **argv)
 	const string  input_path   = clo_option("-i" , "" , "< input sequence");
 	const string  inbsc_path   = clo_option("-r" , "" , "< input sequence 2");
 	const float   sigma        = clo_option("-s" , 20., "< noise std");
-	const string  outpsnr_path = clo_option("-f" , "" , "> where to write the PSNR informations");
-	const string  out_path     = clo_option("-o1", "" , "> where to write the original image (used for tiff to png transformation)");
-	const string  outdiff_path = clo_option("-o2", "" , "> where to write the diff image");
+	const string  outpsnr_path = clo_option("-f" , "psnr.txt" , "> where to write the PSNR informations");
+	const string  out_path     = clo_option("-o1", "original.png" , "> where to write the original image (used for tiff to png transformation)");
+	const string  outdiff_path = clo_option("-o2", "diff.png" , "> where to write the diff image");
 	const string  comment      = clo_option("-m" , "" , "> comment before printing the result, used for formatting");
 
 

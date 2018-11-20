@@ -150,9 +150,6 @@ int main(int argc, char **argv)
 	//! Run denoising algorithm
 	EPLLhalfQuadraticSplit(noisy, final, original, imSize, partialPSNR, sigma, patch_size, patch_size_channels, betas, iter, step, models);
 
-    //! clip resulting image between 0 and 1
-    clip(final, 0., 1.);
-
 	//! Compute PSNR and RMSE
 	float final_psnr = -1, final_rmse = -1;
 	computePsnr(original, final, final_psnr, final_rmse, 1.);

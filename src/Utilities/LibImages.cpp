@@ -152,9 +152,7 @@ void addNoise(
 
 	//! Initialization
     o_imNoisy = i_im;
-//  mt_init_genrand((unsigned long int) time (NULL) + (unsigned long int) getpid());
-    mt_init_genrand(0);
-	 printf("Warning: random generator seed is 0\n");
+    mt_init_genrand((unsigned long int) time (NULL) + (unsigned long int) getpid());
 
     //! Add noise
     for (unsigned k = 0; k < i_im.size(); k++) {
@@ -264,39 +262,39 @@ void transformColorSpace(
 	if (p_isForward) {
 		if (chnls == 3) {
 			const unsigned red   = 0;
-			const unsigned green = wh;
-			const unsigned blue  = wh * 2;
+			const unsigned green = 1;
+			const unsigned blue  = 2;
 			const float a = 1.f / sqrtf(3.f);
 			const float b = 1.f / sqrtf(2.f);
 			const float c = 2.f * a * sqrtf(2.f);
 
 			for (unsigned k = 0; k < wh; k++) {
 				//! Y channel
-				imTmp[k + red  ] = a * (io_im[k + red] + io_im[k + green] + io_im[k + blue]);
+				imTmp[k*chnls + red] = a * (io_im[k*chnls + red] + io_im[k*chnls + green] + io_im[k*chnls + blue]);
 
 				//! U channel
-				imTmp[k + green] = b * (io_im[k + red] - io_im[k + blue]);
+				imTmp[k*chnls + green] = b * (io_im[k*chnls + red] - io_im[k*chnls + blue]);
 
 				//! V channel
-				imTmp[k + blue ] = c * (0.25f * io_im[k + red ] - 0.5f * io_im[k + green]
-				                      + 0.25f * io_im[k + blue]);
+				imTmp[k*chnls + blue] = c * (0.25f * io_im[k*chnls + red ] - 0.5f * io_im[k*chnls + green]
+				                      + 0.25f * io_im[k*chnls + blue]);
 			}
 		}
 		else { //! chnls == 4
 			const unsigned Gr = 0;
-			const unsigned R  = wh;
-			const unsigned B  = wh * 2;
-			const unsigned Gb = wh * 3;
+			const unsigned R  = 1;
+			const unsigned B  = 2;
+			const unsigned Gb = 3;
 			const float a = 0.5f;
 			const float b = 1.f / sqrtf(2.f);
 
 			for (unsigned k = 0; k < wh; k++) {
-				imTmp[k + Gr] = a * ( io_im[k + Gr] + io_im[k + R ] +
-				                      io_im[k + B ] + io_im[k + Gb]);
-				imTmp[k + R ] = b * ( io_im[k + R ] - io_im[k + B ]);
-				imTmp[k + B ] = a * (-io_im[k + Gr] + io_im[k + R ] +
-				                      io_im[k + B ] - io_im[k + Gb]);
-				imTmp[k + Gb] = b * (-io_im[k + Gr] + io_im[k + Gb]);
+				imTmp[k*chnls + Gr] = a * ( io_im[k*chnls + Gr] + io_im[k*chnls + R ] +
+				                      io_im[k*chnls + B ] + io_im[k*chnls + Gb]);
+				imTmp[k*chnls + R ] = b * ( io_im[k*chnls + R ] - io_im[k*chnls + B ]);
+				imTmp[k*chnls + B ] = a * (-io_im[k*chnls + Gr] + io_im[k*chnls + R ] +
+				                      io_im[k*chnls + B ] - io_im[k*chnls + Gb]);
+				imTmp[k*chnls + Gb] = b * (-io_im[k*chnls + Gr] + io_im[k*chnls + Gb]);
 			}
 		}
 	}
@@ -304,36 +302,36 @@ void transformColorSpace(
 	else {
 		if (chnls == 3) {
 			const unsigned red   = 0;
-			const unsigned green = wh;
-			const unsigned blue  = wh * 2;
+			const unsigned green = 1;
+			const unsigned blue  = 2;
 			const float a = 1.f / sqrtf(3.f);
 			const float b = 1.f / sqrtf(2.f);
 			const float c = a / b;
 
 			for (unsigned k = 0; k < wh; k++) {
 				//! R channel
-				imTmp[k + red  ] = a * io_im[k + red] + b * io_im[k + green]
-				                               + c * 0.5f * io_im[k + blue];
+				imTmp[k*chnls + red  ] = a * io_im[k*chnls + red] + b * io_im[k*chnls + green]
+				                               + c * 0.5f * io_im[k*chnls + blue];
 				//! G channel
-				imTmp[k + green] = a * io_im[k + red] - c * io_im[k + blue];
+				imTmp[k*chnls + green] = a * io_im[k*chnls + red] - c * io_im[k*chnls + blue];
 
 				//! B channel
-				imTmp[k + blue ] = a * io_im[k + red] - b * io_im[k + green]
-				                               + c * 0.5f * io_im[k + blue];
+				imTmp[k*chnls + blue ] = a * io_im[k*chnls + red] - b * io_im[k*chnls + green]
+				                               + c * 0.5f * io_im[k*chnls + blue];
 			}
 		}
 		else {	//! chnls == 4
 			const unsigned Gr = 0;
-			const unsigned R  = wh;
-			const unsigned B  = wh * 2;
-			const unsigned Gb = wh * 3;
+			const unsigned R  = 1;
+			const unsigned B  = 2;
+			const unsigned Gb = 3;
 			const float a = 0.5f;
 			const float b = 1.f / sqrtf(2.f);
 			for (unsigned k = 0; k < wh; k++) {
-				imTmp[k + Gr] = a * io_im[k + Gr] - a * io_im[k + B] - b * io_im[k + Gb];
-				imTmp[k + R ] = a * io_im[k + Gr] + b * io_im[k + R] + a * io_im[k + B];
-				imTmp[k + B ] = a * io_im[k + Gr] - b * io_im[k + R] + a * io_im[k + B];
-				imTmp[k + Gb] = a * io_im[k + Gr] - a * io_im[k + B] + b * io_im[k + Gb];
+				imTmp[k*chnls + Gr] = a * io_im[k*chnls + Gr] - a * io_im[k*chnls + B] - b * io_im[k*chnls + Gb];
+				imTmp[k*chnls + R ] = a * io_im[k*chnls + Gr] + b * io_im[k*chnls + R] + a * io_im[k*chnls + B];
+				imTmp[k*chnls + B ] = a * io_im[k*chnls + Gr] - b * io_im[k*chnls + R] + a * io_im[k*chnls + B];
+				imTmp[k*chnls + Gb] = a * io_im[k*chnls + Gr] - a * io_im[k*chnls + B] + b * io_im[k*chnls + Gb];
 			}
 		}
 	}
