@@ -26,9 +26,10 @@
  * @param logweight: Log of the weight associated to this Gaussian in the GMM
  * @param eigVects: Eigenvectors of the covariance matrix of the Gaussian
  * @param eigVals: Eigenvalues of the covariance matrix of the Gaussian
- * @param invSqrtCov: Stores the precomputation of the inverse of the square root of the covariance matrix for the computation of the log pdf
+ * @param invSqrtCov: Stores the precomputation of the inverse of the square
+ *                    root of the covariance matrix for the computation of the log pdf
  * @param logdet: Precomputation of the log of the determinant
- * @param r: Max rank kept for the covariance matrix;
+ * @param rank: Max rank kept for the covariance matrix;
  **/
 struct Model{
 	float logweight;
@@ -36,26 +37,39 @@ struct Model{
 	std::vector<float> eigVals;
 	std::vector<float> invSqrtCov;
 	float logdet;
-	int r;
+	int rank;
 };
 
 /**
  * @brief Apply the half-quadratic splitting denoising method
  *
- * @param noiseI : Image that need denoising
- * @param finalI : Stores the output image
- * @param origI : Non-noisy image to compute PSNRs
- * @param imSize : Size of the image
- * @param partialPSNR : Print partial PSNR to show the evolution when going through iterations and betas 
+ * @param noiseI : Image to denoise
+ * @param finalI : Output image
+ * @param origI  : Non-noisy image (used to compute partial PSNRs)
+ * @param imSize : Image size
+ * @param partialPSNR : Print partial PSNR for each iteration and beta
  * @param noiseSD : Standard deviation of the noise
- * @param patchsize : Spatial size of the patch
- * @param patchsizeChannels : Number of channel to use for the denoising (defined by the model)
- * @param betas : Stores the serie of beta coefficient used for the splitting
- * @param T : Number of iteration 
- * @param pas : Step of the spatial grid used to extract the patches in the image
- * @param models : Stores the Gaussian mixture model (one Gaussian per entry of the array)
+ * @param patchSize : Size of the patch
+ * @param patchChannels : Number of channels to use for the denoising
+ *                        (defined by the model)
+ * @param betas  : Sequence of beta coefficients used for the H-Q splitting
+ * @param T      : Number of iterations
+ * @param step   : Step of the spatial grid of processed patches
+ * @param models : Gaussian mixture model
  **/
-void EPLLhalfQuadraticSplit(std::vector<float>& noiseI, std::vector<float>& finalI, std::vector<float>& origI, ImageSize& imSize, bool partialPSNR, float noiseSD, int patchsize, int patchsizeChannels, std::vector<float> betas, int T, int pas, std::vector<Model>& models);
+void EPLLhalfQuadraticSplit(
+		std::vector<float>& noiseI,
+		std::vector<float>& finalI,
+		std::vector<float>& origI,
+		ImageSize& imSize,
+		bool partialPSNR,
+		float noiseSD,
+		int patchSize,
+		int patchChannels,
+		std::vector<float> betas,
+		int T,
+		int step,
+		std::vector<Model>& models);
 
 /**
  * @brief Compute the approximative maximum a priori image reconstructed using the Gaussian mixture model represented by models

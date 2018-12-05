@@ -34,33 +34,64 @@
 #include <omp.h>
 #endif
 
-void EPLLhalfQuadraticSplit(std::vector<float>& noiseI, std::vector<float>& finalI, std::vector<float>& origI, ImageSize& imSize, bool partialPSNR, float noiseSD, int patchsize, int patchsizeChannels, std::vector<float> betas, int T, int pas, std::vector<Model>& models)
+/**
+ * @brief Apply the half-quadratic splitting denoising method
+ *
+ * @param noisyI : Image to denoise
+ * @param finalI : Output image
+ * @param origI  : Non-noisy image (used to compute partial PSNRs)
+ * @param imSize : Image size
+ * @param partialPSNR : Print partial PSNR for each iteration and beta
+ * @param noiseSD : Standard deviation of the noise
+ * @param patchSize : Size of the patch
+ * @param patchChannels : Number of channels to use for the denoising
+ *                        (defined by the model)
+ * @param betas  : Sequence of beta coefficients used for the H-Q splitting
+ * @param T      : Number of iterations
+ * @param step   : Step of the spatial grid of processed patches
+ * @param models : patch Gaussian mixture model
+ **/
+void EPLLhalfQuadraticSplit(
+		std::vector<float>& noisyI,
+		std::vector<float>& finalI,
+		std::vector<float>& origI,
+		ImageSize& imSize,
+		bool partialPSNR,
+		float noiseSD,
+		int patchSize,
+		int patchChannels,
+		std::vector<float> betas,
+		int T,
+		int step,
+		std::vector<Model>& models)
 {
-	finalI = noiseI;
+	finalI = noisyI;
 
 	for(int i = 0; i < betas.size(); ++i)
 	{
 		for(int it = 0; it < T; ++it)
 		{
-			std::vector<float> tempI(finalI.size(), 0.);
+			std::vector<float> aggMAPI(finalI.size(), 0.);
 			float sigma = noiseSD/std::sqrt(betas[i]);
 			sigma /= 255.;
 
-			// Compute the maximum a posteriori estimation of the set of patches in finalI for the given pre-learned GMM model
-			aprxMAPGMM(finalI, tempI, imSize, sigma, patchsize, patchsizeChannels, pas, models);
+			// aggregated MAP patch estimates according to GMM a-priori model
+			// (denoted Z in the IPOL paper)
+			aprxMAPGMM(finalI, aggMAPI, imSize, sigma, patchSize, patchChannels,
+			           step, models);
 
-			// Update the final estimate by combining the noisy image and the current estimate
+			// Update image estimate by combining the noisy image and the patches MAP
 			for(int k = 0; k < finalI.size(); ++k)	
-				finalI[k] = (noiseI[k] + betas[i]*tempI[k])/(1. + betas[i]);
+				finalI[k] = (noisyI[k] + betas[i]*aggMAPI[k])/(1. + betas[i]);
 
-			// Print partial PSNR to track the improvement
+			// Print partial PSNR
 			if(partialPSNR)
 			{
-				float psnr, rmse;
-				computePsnr(finalI, origI, psnr, rmse, 1.);
-				float psnr2, rmse2;
-				computePsnr(tempI, origI, psnr2, rmse2, 1.);
-				printf("Beta = \t%f, Iter =\t%d  PSNR =\t%f RMSE =\t%f (temporary image PSNR =\t%f RMSE =\t%f)\n", betas[i], it, psnr, 255.*rmse, psnr2, 255.*rmse2);
+				float psnr, rmse, psnr2, rmse2;
+				computePsnr(finalI , origI, psnr , rmse , 1.);
+				computePsnr(aggMAPI, origI, psnr2, rmse2, 1.);
+				printf("beta = % 5.1f  iter = % 2d - image estimate: PSNR = %5.2f RMSE = %6.3f\n", betas[i], it, psnr, 255.*rmse);
+				printf("                 - aggregated patch MAPs: PSNR = %5.2f RMSE = %6.3f\n", psnr2, 255.*rmse2);
 			}
 		}
 	}
@@ -107,7 +138,7 @@ void aprxMAPGMM(std::vector<float>& noiseI, std::vector<float>& tempI, ImageSize
 
 		float *invSqrtCov = models[m].invSqrtCov.data();
 		float *eigv = models[m].eigVects.data();
-		for (unsigned k = 0; k < models[m].r; ++k)
+		for (unsigned k = 0; k < models[m].rank; ++k)
 		for (unsigned i = 0; i < N; ++i)
 			*invSqrtCov++ = (*eigv++) / std::sqrt(sigma2 + models[m].eigVals[k]);
 	}
@@ -177,17 +208,17 @@ void aprxMAPGMM(std::vector<float>& noiseI, std::vector<float>& tempI, ImageSize
 			productMatrix(tempPatch,
 					patch,
 					models[best].eigVects,
-					1, models[best].r, N,
+					1, models[best].rank, N,
 					false, false);
 			std::vector<float> eigVecs(models[best].eigVects);
 			float *eigv = eigVecs.data();
-			for (unsigned k = 0; k < models[best].r; ++k)
+			for (unsigned k = 0; k < models[best].rank; ++k)
 			for (unsigned i = 0; i < N; ++i)
 				*eigv++ *= (models[best].eigVals[k] / (models[best].eigVals[k] + sigma2));
 			productMatrix(patch,
 					tempPatch,
 					eigVecs,
-					1, N, models[best].r,
+					1, N, models[best].rank,
 					false, true);
 
 			// Add back the DC component
@@ -224,7 +255,7 @@ void loggausspdf(std::vector<float>& patches, int dim, int nbP, Model& model, fl
 	productMatrix(output,
 			patches,
 			model.invSqrtCov,
-			nbP, model.r, dim,
+			nbP, model.rank, dim,
 			false, false);
 
 	for(int p = 0; p < nbP; ++p)
