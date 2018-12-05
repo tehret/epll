@@ -12,14 +12,10 @@
 #        noisy.tif
 #        40
 #        out.tif      # also creates out.tif.non.tif
-#        "-w 8 -1"    # dctdenoising params (optional)
-#        3            # LEVELS of pyramid (default: 4 = auto) (optional)
-#        2            # R_PYR pyramid ratio: 2 (optional)
+#        "-w 8 -1"    # epll parameters (optional)
+#        4            # LEVELS of pyramid (default: 4 = auto) (optional)
+#        2            # R_PYR pyramid ratio: 2 (optional), 1.5 also possible
 #        0.7          # PAR_PYR recomposition ratio : 0.7 (optional)
-
-#set -x
-#set -u
-#set -e
 
 if [ $# -lt 4 ]; then
    echo "$0 noisy.tif sigma out.tif"
