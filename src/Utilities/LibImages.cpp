@@ -179,23 +179,23 @@ void addNoise(
  * @return EXIT_FAILURE if both images haven't the same size.
  **/
 int computePsnr(
-    std::vector<float> const& i_im1
-,   std::vector<float> const& i_im2
-,   float &o_psnr
-,   float &o_rmse
-,   const float i_max = 1.
+	vector<float> const& i_im1
+,	vector<float> const& i_im2
+,	float &o_psnr
+,	float &o_rmse
+,	const float i_max = 1.
 ){
-    if (i_im1.size() != i_im2.size()) {
-        return EXIT_FAILURE;
-    }
-    float sum = 0.f;
-    for (unsigned k = 0; k < i_im1.size(); k++)
-        sum += (i_im1[k] - i_im2[k]) * (i_im1[k] - i_im2[k]);
+	if (i_im1.size() != i_im2.size())
+		return EXIT_FAILURE;
 
-    o_rmse = sqrtf(sum / (float) i_im1.size());
-    o_psnr = 20.f * log10f(i_max / o_rmse);
+	double sum = 0.f;
+	for (unsigned k = 0; k < i_im1.size(); k++)
+		sum += (i_im1[k] - i_im2[k]) * (i_im1[k] - i_im2[k]);
 
-    return EXIT_SUCCESS;
+	o_rmse = sqrtf(sum / (float) i_im1.size());
+	o_psnr = 20.f * log10f(i_max / o_rmse);
+
+	return EXIT_SUCCESS;
 }
 
 /**
