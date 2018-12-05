@@ -119,7 +119,7 @@ void aprxMAPGMM(
 	int W = imSize.width, H = imSize.height, C = imSize.nChannels;
 
 	// Compute the mask of patches that need denoising
-	std::vector<int> mask(imSize.width*imSize.height*imSize.nChannels, 0);
+	std::vector<int> mask(W*H*C, 0);
 	int nbP = 0; // number of patches
 	for(int y = 0; y <= H - ps; ++y)
 	for(int x = 0; x <= W - ps; ++x)
