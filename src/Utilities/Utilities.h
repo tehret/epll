@@ -13,6 +13,7 @@
 #define UTILITIES_H_INCLUDED
 
 #include <vector>
+#include <utility>
 #include "LibImages.h"
 
 /**

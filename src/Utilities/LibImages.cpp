@@ -18,14 +18,11 @@
  **/
 
 #include "LibImages.h"
-#include "io_png.h"
 #include "Utilities.h"
 #include "mt19937ar.h"
 
-#include <unistd.h> // getpid
+#include <unistd.h> // getpid to init random seed
 #include <iostream>
-#include <sstream>
-#include <stdlib.h>
 #include <math.h>
 
 extern "C" {
@@ -46,7 +43,7 @@ using namespace std;
  **/
 int loadImage(
 	const char* p_name
-,	std::vector<float> &o_im
+,	vector<float> &o_im
 ,	ImageSize &o_imSize
 ,	const bool p_verbose
 ){
@@ -108,26 +105,26 @@ int loadImage(
  * @return EXIT_SUCCESS if the image has been saved, EXIT_FAILURE otherwise
  **/
 int saveImage(
-    const char* p_name
-,   std::vector<float> const& i_im
-,   const ImageSize &p_imSize
+	const char* p_name
+,	vector<float> const& i_im
+,	const ImageSize &p_imSize
 ){
-    //! Allocate Memory
-    float* imTmp = new float[p_imSize.whc];
+	//! Allocate Memory
+	float* imTmp = new float[p_imSize.whc];
 
-    unsigned c = p_imSize.nChannels;
-    unsigned w = p_imSize.width;
-    unsigned h = p_imSize.height;
+	unsigned c = p_imSize.nChannels;
+	unsigned w = p_imSize.width;
+	unsigned h = p_imSize.height;
 
-    //! Check for boundary problems
-    for (unsigned k = 0; k < p_imSize.whc; k++)
-        imTmp[k] = i_im[k];
+	//! Check for boundary problems
+	for (unsigned k = 0; k < p_imSize.whc; k++)
+		imTmp[k] = i_im[k];
 
-    iio_save_image_float_vec(p_name, imTmp, w, h, c);
-    //! Free Memory
-    delete[] imTmp;
+	iio_save_image_float_vec(p_name, imTmp, w, h, c);
+	//! Free Memory
+	delete[] imTmp;
 
-    return EXIT_SUCCESS;
+	return EXIT_SUCCESS;
 }
 
 /**
@@ -141,30 +138,32 @@ int saveImage(
  * @return none.
  **/
 void addNoise(
-    std::vector<float> const& i_im
-,   std::vector<float> &o_imNoisy
-,   const float p_sigma
-,   const bool p_verbose
+	vector<float> const& i_im
+,	vector<float> &o_imNoisy
+,	const float p_sigma
+,	const bool p_verbose
 ){
-    if (p_verbose) {
-        cout << "Add noise [sigma = " << p_sigma << "] ...";
-    }
+	if (p_verbose) {
+		cout << "Add noise [sigma = " << p_sigma << "] ...";
+	}
 
 	//! Initialization
-    o_imNoisy = i_im;
-    mt_init_genrand((unsigned long int) time (NULL) + (unsigned long int) getpid());
+	o_imNoisy = i_im;
+//	mt_init_genrand((unsigned long int) time (NULL) + (unsigned long int) getpid());
+	mt_init_genrand(0);
+	std::cout << "WARNING: noise seed is 0" << std::endl;
 
-    //! Add noise
-    for (unsigned k = 0; k < i_im.size(); k++) {
-        const double a = mt_genrand_res53();
-        const double b = mt_genrand_res53();
+	//! Add noise
+	for (unsigned k = 0; k < i_im.size(); k++) {
+		const double a = mt_genrand_res53();
+		const double b = mt_genrand_res53();
 
-        o_imNoisy[k] += p_sigma * (float) (sqrtl(-2.0l * log(a)) * cos(2.0l * M_PI * b));
-    }
+		o_imNoisy[k] += p_sigma * (float) (sqrtl(-2.0l * log(a)) * cos(2.0l * M_PI * b));
+	}
 
-    if (p_verbose) {
-        cout << "done." << endl;
-    }
+	if (p_verbose) {
+		cout << "done." << endl;
+	}
 }
 
 /**
@@ -212,26 +211,26 @@ int computePsnr(
  * @return EXIT_FAILURE if i_im1 and i_im2 don't have the same size.
  **/
 int computeDiff(
-    std::vector<float> const& i_im1
-,   std::vector<float> const& i_im2
-,   std::vector<float> &o_imDiff
-,   const float p_sigma
-,   const float p_max
+	vector<float> const& i_im1
+,	vector<float> const& i_im2
+,	vector<float> &o_imDiff
+,	const float p_sigma
+,	const float p_max
 ){
-    if (i_im1.size() != i_im2.size()) {
-        return EXIT_FAILURE;
-    }
+	if (i_im1.size() != i_im2.size()) {
+		return EXIT_FAILURE;
+	}
 
-    const unsigned size = i_im1.size();
-    if (o_imDiff.size() != size) {
-        o_imDiff.resize(size);
-    }
+	const unsigned size = i_im1.size();
+	if (o_imDiff.size() != size) {
+		o_imDiff.resize(size);
+	}
 
-    for (unsigned k = 0; k < size; k++) {
-        o_imDiff[k] =  (i_im1[k] - i_im2[k] + p_sigma) * p_max / (2.f * p_sigma);
-    }
+	for (unsigned k = 0; k < size; k++) {
+		o_imDiff[k] =  (i_im1[k] - i_im2[k] + p_sigma) * p_max / (2.f * p_sigma);
+	}
 
-    return EXIT_SUCCESS;
+	return EXIT_SUCCESS;
 }
 
 /**
@@ -244,7 +243,7 @@ int computeDiff(
  * @return none.
  **/
 void transformColorSpace(
-	std::vector<float> &io_im
+	vector<float> &io_im
 ,	const ImageSize p_imSize
 ,	const bool p_isForward
 ){
@@ -270,14 +269,17 @@ void transformColorSpace(
 
 			for (unsigned k = 0; k < wh; k++) {
 				//! Y channel
-				imTmp[k*chnls + red] = a * (io_im[k*chnls + red] + io_im[k*chnls + green] + io_im[k*chnls + blue]);
+				imTmp[k*chnls + red] = a * (io_im[k*chnls + red  ] +
+				                            io_im[k*chnls + green] +
+				                            io_im[k*chnls + blue ]);
 
 				//! U channel
 				imTmp[k*chnls + green] = b * (io_im[k*chnls + red] - io_im[k*chnls + blue]);
 
 				//! V channel
-				imTmp[k*chnls + blue] = c * (0.25f * io_im[k*chnls + red ] - 0.5f * io_im[k*chnls + green]
-				                      + 0.25f * io_im[k*chnls + blue]);
+				imTmp[k*chnls + blue] = c * (0.25f * io_im[k*chnls + red  ]
+				                            - 0.5f * io_im[k*chnls + green]
+				                            +0.25f * io_im[k*chnls + blue ]);
 			}
 		}
 		else { //! chnls == 4
@@ -290,10 +292,10 @@ void transformColorSpace(
 
 			for (unsigned k = 0; k < wh; k++) {
 				imTmp[k*chnls + Gr] = a * ( io_im[k*chnls + Gr] + io_im[k*chnls + R ] +
-				                      io_im[k*chnls + B ] + io_im[k*chnls + Gb]);
+				                            io_im[k*chnls + B ] + io_im[k*chnls + Gb]);
 				imTmp[k*chnls + R ] = b * ( io_im[k*chnls + R ] - io_im[k*chnls + B ]);
 				imTmp[k*chnls + B ] = a * (-io_im[k*chnls + Gr] + io_im[k*chnls + R ] +
-				                      io_im[k*chnls + B ] - io_im[k*chnls + Gb]);
+				                            io_im[k*chnls + B ] - io_im[k*chnls + Gb]);
 				imTmp[k*chnls + Gb] = b * (-io_im[k*chnls + Gr] + io_im[k*chnls + Gb]);
 			}
 		}
@@ -310,14 +312,16 @@ void transformColorSpace(
 
 			for (unsigned k = 0; k < wh; k++) {
 				//! R channel
-				imTmp[k*chnls + red  ] = a * io_im[k*chnls + red] + b * io_im[k*chnls + green]
-				                               + c * 0.5f * io_im[k*chnls + blue];
+				imTmp[k*chnls + red  ] = a *        io_im[k*chnls + red]
+				                       + b *        io_im[k*chnls + green]
+				                       + c * 0.5f * io_im[k*chnls + blue];
 				//! G channel
 				imTmp[k*chnls + green] = a * io_im[k*chnls + red] - c * io_im[k*chnls + blue];
 
 				//! B channel
-				imTmp[k*chnls + blue ] = a * io_im[k*chnls + red] - b * io_im[k*chnls + green]
-				                               + c * 0.5f * io_im[k*chnls + blue];
+				imTmp[k*chnls + blue ] = a *        io_im[k*chnls + red]
+				                       - b *        io_im[k*chnls + green]
+				                       + c * 0.5f * io_im[k*chnls + blue];
 			}
 		}
 		else {	//! chnls == 4
@@ -349,11 +353,11 @@ void transformColorSpace(
  * @return none.
  **/
 void clip(
-    std::vector<float> &io_im
-,   const float val_min
-,   const float val_max
+	vector<float> &io_im
+,	const float val_min
+,	const float val_max
 )
 {
-	for(int i = 0; i < io_im.size(); ++i)	
-		io_im[i] = std::min(std::max(io_im[i], val_min), val_max);
+	for(int i = 0; i < io_im.size(); ++i)
+		io_im[i] = min(max(io_im[i], val_min), val_max);
 }

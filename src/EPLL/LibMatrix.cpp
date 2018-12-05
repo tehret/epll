@@ -20,15 +20,9 @@
  **/
 
 #include "LibMatrix.h"
-#include <iostream>
-#include <cmath>
-#include <cstdlib>
-#include <cstdio>
 
 #include <cblas.h>
 #include <lapacke.h>
-
-using namespace std;
 
 /**
  * @brief Multiply two matrix A * B. It uses BLAS SGEMM.
@@ -44,9 +38,9 @@ using namespace std;
  * @return  none.
  **/
 void productMatrix(
-	vector<float> &o_AB
-,	vector<float> const& i_A
-,	vector<float> const& i_B
+	std::vector<float> &o_AB
+,	std::vector<float> const& i_A
+,	std::vector<float> const& i_B
 ,	const unsigned p_n
 ,	const unsigned p_l
 ,	const unsigned p_m
@@ -93,11 +87,11 @@ void productMatrix(
  * @return none.
  **/
 int matrixEigs(
-	vector<float> &i_mat
+	std::vector<float> &i_mat
 ,	const unsigned p_n
 ,	const unsigned p_r
-,	vector<float> &o_S
-,	vector<float> &o_U
+,	std::vector<float> &o_S
+,	std::vector<float> &o_U
 ){
 	// set parameters for LAPACKE SSYEV function
 	// SSYEVX: Single SYmmetric EigenValues and eigenvectors eXpert

@@ -17,18 +17,11 @@
  * @author Thibaud Ehret <ehret.thibaud@gmail.com>
  **/
 
-#include <stdexcept>
-#include <iostream>
-#include <stdlib.h>
-#include <algorithm>
-#include <math.h>
-#include <string>
+#include <cmath>
 
 #include "epll.h"
 #include "LibMatrix.h"
 #include "../Utilities/Utilities.h"
-#include <ctime>
-#include <random>
 
 #ifdef _OPENMP
 #include <omp.h>

@@ -13,7 +13,6 @@
 #define LIB_MATRIX_H_INCLUDED
 
 #include <vector>
-#include <string>
 
 /**
  * @brief Multiply two matrices A * B. It uses BLAS SGEMM.

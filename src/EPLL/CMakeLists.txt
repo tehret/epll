@@ -5,7 +5,6 @@ include_directories(${CMAKE_SOURCE_DIR}/src/Utilities)
 add_library(epll SHARED
 	epll.cpp
 	LibMatrix.cpp
-	../Utilities/io_png.c
 	../Utilities/iio.c
 	../Utilities/LibImages.cpp
 	../Utilities/mt19937ar.c
