@@ -53,11 +53,9 @@ void productMatrix(
 ,	const bool p_transA
 ,	const bool p_transB
 ,	const bool p_colMajor
-,	unsigned lda
-,	unsigned ldb
 ){
-	if (!lda) lda = p_colMajor ? (p_transA ? p_m : p_n) : (p_transA ? p_n : p_m);
-	if (!ldb) ldb = p_colMajor ? (p_transB ? p_l : p_m) : (p_transB ? p_m : p_l);
+	unsigned lda = p_colMajor ? (p_transA ? p_m : p_n) : (p_transA ? p_n : p_m);
+	unsigned ldb = p_colMajor ? (p_transB ? p_l : p_m) : (p_transB ? p_m : p_l);
 
 	cblas_sgemm(p_colMajor ? CblasColMajor : CblasRowMajor,  // matrix storage mode
 	            p_transA   ? CblasTrans    : CblasNoTrans,   // op(A)

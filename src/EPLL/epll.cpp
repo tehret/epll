@@ -175,27 +175,25 @@ void aprxMAPGMM(
 	for(int y = 0; y < H; ++y)
 	for(int x = 0; x < W; ++x)
 	for(int c = 0; c < C; ++c)
+	if(mask[y*W*C + x*C + c] == 1)
 	{
-		if(mask[y*W*C + x*C + c] == 1)
-		{
-			// Compute the DC component (average value of patch)
-			patchesDC[k] = 0.f;
-			for(int dy = 0; dy < ps; ++dy)
-			for(int dx = 0; dx < ps; ++dx)
-			for(int dc = 0; dc < pc; ++dc)
-				patchesDC[k] += noisyI[(y+dy)*W*C + (x+dx)*C + c+dc];
+		// Compute the DC component (average value of patch)
+		patchesDC[k] = 0.f;
+		for(int dy = 0; dy < ps; ++dy)
+		for(int dx = 0; dx < ps; ++dx)
+		for(int dc = 0; dc < pc; ++dc)
+			patchesDC[k] += noisyI[(y+dy)*W*C + (x+dx)*C + c+dc];
 
-			patchesDC[k] /= (float)pdim;
+		patchesDC[k] /= (float)pdim;
 
-			// Load patch into the specific vector while removing the DC component
-			/* NOTE: patches is a nbP x pdim matrix stored in column-major layout */
-			for(int dc = 0, d = 0; dc < pc; ++dc)
-			for(int dx = 0;        dx < ps; ++dx)
-			for(int dy = 0;        dy < ps; ++dy, ++d)
-				patches[k + nbP*d] = (noisyI[(y+dy)*W*C + (x+dx)*C + c+dc] - patchesDC[k]);
+		// Load patch into the specific vector while removing the DC component
+		/* NOTE: patches is a nbP x pdim matrix stored in column-major layout */
+		for(int dc = 0, d = 0; dc < pc; ++dc)
+		for(int dx = 0;        dx < ps; ++dx)
+		for(int dy = 0;        dy < ps; ++dy, ++d)
+			patches[k + nbP*d] = (noisyI[(y+dy)*W*C + (x+dx)*C + c+dc] - patchesDC[k]);
 
-			++k;
-		}
+		++k;
 	}
 
 	// Compute the conditional mixing weights for all patches
@@ -213,63 +211,61 @@ void aprxMAPGMM(
 	for(int y = 0; y < H; ++y)
 	for(int x = 0; x < W; ++x)
 	for(int c = 0; c < C; ++c)
+	if(mask[y*C*W + x*C + c] == 1) // only process some patches
 	{
-		if(mask[y*C*W + x*C + c] == 1) // only process some patches
+		// Select the best Gaussian component (highest conditional mixing weight)
+		int best = 0;
+		float bestv = mixingWeights[0][k];
+		for(int m = 1; m < models.size(); ++m)
 		{
-			// Select the best Gaussian component (highest conditional mixing weight)
-			int best = 0;
-			float bestv = mixingWeights[0][k];
-			for(int m = 1; m < models.size(); ++m)
+			if(mixingWeights[m][k] > bestv)
 			{
-				if(mixingWeights[m][k] > bestv)
-				{
-					best = m;
-					bestv = mixingWeights[m][k];
-				}
+				best = m;
+				bestv = mixingWeights[m][k];
 			}
-
-			// Extract the patch from the list of patches
-			std::vector<float> patch(pdim);
-			for(int d = 0; d < pdim; ++d)
-				patch[d] = patches[k + nbP*d];
-
-			// Compute the MAP of the patch according to best Gaussian component
-
-			// First project patch over the eigenvectors (only r of them):
-			// tempPatch <-- Q_{kmax}^T * patch, where Q_{kmax} is the eigenvector matrix,
-			std::vector<float> tempPatch(models[best].rank);
-			productMatrix(tempPatch,                  // A^T*B
-			              models[best].eigVects,      // A=eigVects, pdim x rank
-			              patch,                      // B=patch,    pdim x 1
-			              models[best].rank, 1, pdim, // dimensions
-			              true, false);               // transpose A, don't transpose B
-
-			// Apply shrinkage coefficients to patch components:
-			// tempPatch <-- S_{kmax} * tempPatch, with S_{kmax} the diagonal shrinkage matrix
-			for (unsigned k = 0; k < models[best].rank; ++k)
-				tempPatch[k] *= (models[best].eigVals[k] / (models[best].eigVals[k] + sigma2));
-
-			// Reconstruct patch from shrunk components: patch = Q_{kmax} * tempPatch
-			productMatrix(patch,                       // A*B
-			              models[best].eigVects,       // A=eigVects,  pdim x rank
-			              tempPatch,                   // B=tempPatch, rank x 1
-			              pdim, 1, models[best].rank,  // dimensions
-			              false, false);               // don't transpose A nor B
-
-			// Add back the DC component
-			for(int d = 0; d < pdim; ++d)
-				patch[d] += patchesDC[k];
-
-			// Aggregate the result on the result image
-			for(int dc = 0, d = 0; dc < pc; ++dc)
-			for(int dx = 0;        dx < ps; ++dx)
-			for(int dy = 0;        dy < ps; ++dy, ++d)
-			{
-				aggMAPI [(y+dy)*W*C + (x+dx)*C + c+dc] += patch[d];
-				aggCount[(y+dy)*W*C + (x+dx)*C + c+dc] ++;
-			}
-			++k;
 		}
+
+		// Extract the patch from the list of patches
+		std::vector<float> patch(pdim);
+		for(int d = 0; d < pdim; ++d)
+			patch[d] = patches[k + nbP*d];
+
+		// Compute the MAP of the patch according to best Gaussian component
+
+		// First project patch over the eigenvectors (only r of them):
+		// tempPatch <-- Q_{kmax}^T * patch, where Q_{kmax} is the eigenvector matrix,
+		std::vector<float> tempPatch(models[best].rank);
+		productMatrix(tempPatch,                  // A^T*B
+		              models[best].eigVects,      // A=eigVects, pdim x rank
+		              patch,                      // B=patch,    pdim x 1
+		              models[best].rank, 1, pdim, // dimensions
+		              true, false);               // transpose A, don't transpose B
+
+		// Apply shrinkage coefficients to patch components:
+		// tempPatch <-- S_{kmax} * tempPatch, with S_{kmax} the diagonal shrinkage matrix
+		for (unsigned k = 0; k < models[best].rank; ++k)
+			tempPatch[k] *= (models[best].eigVals[k] / (models[best].eigVals[k] + sigma2));
+
+		// Reconstruct patch from shrunk components: patch = Q_{kmax} * tempPatch
+		productMatrix(patch,                       // A*B
+		              models[best].eigVects,       // A=eigVects,  pdim x rank
+		              tempPatch,                   // B=tempPatch, rank x 1
+		              pdim, 1, models[best].rank,  // dimensions
+		              false, false);               // don't transpose A nor B
+
+		// Add back the DC component
+		for(int d = 0; d < pdim; ++d)
+			patch[d] += patchesDC[k];
+
+		// Aggregate the result on the result image
+		for(int dc = 0, d = 0; dc < pc; ++dc)
+		for(int dx = 0;        dx < ps; ++dx)
+		for(int dy = 0;        dy < ps; ++dy, ++d)
+		{
+			aggMAPI [(y+dy)*W*C + (x+dx)*C + c+dc] += patch[d];
+			aggCount[(y+dy)*W*C + (x+dx)*C + c+dc] ++;
+		}
+		++k;
 	}
 
 	// Normalize the aggregated image

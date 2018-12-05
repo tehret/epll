@@ -16,12 +16,12 @@
 #include <string>
 
 /**
- * @brief Multiply two matrix A * B. It uses BLAS SGEMM.
+ * @brief Multiply two matrices A * B. It uses BLAS SGEMM.
  *
  * @param o_AB = array containing n by l product matrix at exit;
  * @param i_A = input array containing n by m matrix;
  * @param i_B = input array containing m by l matrix;
- * @param p_n, p_m, p_l = dimension parameters of arrays.
+ * @param p_n, p_l, p_m = dimension parameters of arrays.
  * @param p_transA = true for transposing A.
  * @param p_transA = true for transposing B.
  * @param p_colMajor = true for if matrices should be read by columns.
@@ -33,13 +33,11 @@ void productMatrix(
 ,	std::vector<float> const& i_A
 ,	std::vector<float> const& i_B
 ,	const unsigned p_n
-,	const unsigned p_m
 ,	const unsigned p_l
+,	const unsigned p_m
 ,	const bool p_transA
 ,	const bool p_transB
 ,	const bool p_colMajor = true
-,	unsigned lda = 0
-,	unsigned ldb = 0
 );
 
 /**
