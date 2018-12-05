@@ -97,11 +97,33 @@ void EPLLhalfQuadraticSplit(
 	}
 }
 
-void aprxMAPGMM(std::vector<float>& noiseI, std::vector<float>& tempI, ImageSize& imSize, float sigma, int ps, int psc, int step, std::vector<Model>& models)
+/**
+ * @brief Computes an image resulting from the aggregation of the approximative
+ * MAP estimates given the noisy images. The a priori distribution is given by
+ * the pre-trained patch GMM.
+ *
+ * @param noisyI : Noisy input image
+ * @param aggMAPI : Output image with the aggregated patch MAP estimates
+ * @param imSize : Image size
+ * @param sigma : Standard deviation of the noise
+ * @param ps : Patch size
+ * @param pc : Number of channels to use for the denoising (defined by the model)
+ * @param step : Step of the spatial grid of processed patches
+ * @param models : patch Gaussian mixture model
+ **/
+void aprxMAPGMM(
+		std::vector<float>& noisyI,
+		std::vector<float>& aggMAPI,
+		ImageSize& imSize,
+		float sigma,
+		int ps,
+		int pc,
+		int step,
+		std::vector<Model>& models)
 {
-	int N = ps*ps*psc;
+	int N = ps*ps*pc;
 	float sigma2 = sigma*sigma;
-	std::vector<float> count(noiseI.size());
+	std::vector<float> count(noisyI.size());
 
 	std::vector<float> tempPatch(N);
 	std::vector<float> patch(N);
@@ -112,7 +134,7 @@ void aprxMAPGMM(std::vector<float>& noiseI, std::vector<float>& tempI, ImageSize
 
 	// Compute the mask of patches that need denoising 
 	int nbP = 0;
-	for(int c = 0; c <= imSize.nChannels-psc; ++c)	
+	for(int c = 0; c <= imSize.nChannels-pc; ++c)	
 	for(int y = 0; y <= imSize.height-ps; ++y)	
 	for(int x = 0; x <= imSize.width-ps; ++x)	
 	{
@@ -155,16 +177,16 @@ void aprxMAPGMM(std::vector<float>& noiseI, std::vector<float>& tempI, ImageSize
 			means[k] = 0.f;
 			for(int dy = 0; dy < ps; ++dy)
 			for(int dx = 0; dx < ps; ++dx)
-			for(int dc = 0; dc < psc; ++dc)
-				means[k] += noiseI[(x+dx)*imSize.nChannels + (y+dy)*imSize.width*imSize.nChannels + c+dc];
+			for(int dc = 0; dc < pc; ++dc)
+				means[k] += noisyI[(x+dx)*imSize.nChannels + (y+dy)*imSize.width*imSize.nChannels + c+dc];
 
 			means[k] /= (float)N;
 
 			// Load patch into the specific vector while removing the DC component
-			for(int dc = 0, d = 0; dc < psc; ++dc)	
+			for(int dc = 0, d = 0; dc < pc; ++dc)	
 			for(int dx = 0;        dx < ps; ++dx)	
 			for(int dy = 0;        dy < ps; ++dy, ++d)	
-				patches[k + nbP*d] = (noiseI[(x+dx)*imSize.nChannels + (y+dy)*imSize.width*imSize.nChannels + c+dc] - means[k]);
+				patches[k + nbP*d] = (noisyI[(x+dx)*imSize.nChannels + (y+dy)*imSize.width*imSize.nChannels + c+dc] - means[k]);
 			++k;
 		}
 	}
@@ -226,11 +248,11 @@ void aprxMAPGMM(std::vector<float>& noiseI, std::vector<float>& tempI, ImageSize
 				patch[d] += means[k];
 
 			// Aggregate the result on the result image
-			for(int dc = 0, d = 0; dc < psc; ++dc)	
+			for(int dc = 0, d = 0; dc < pc; ++dc)	
 			for(int dx = 0;        dx < ps; ++dx)	
 			for(int dy = 0;        dy < ps; ++dy, ++d)	
 			{
-				tempI[(x+dx)*imSize.nChannels + (y+dy)*imSize.width*imSize.nChannels + c+dc] += patch[d];
+				aggMAPI[(x+dx)*imSize.nChannels + (y+dy)*imSize.width*imSize.nChannels + c+dc] += patch[d];
 				count[(x+dx)*imSize.nChannels + (y+dy)*imSize.width*imSize.nChannels + c+dc]++;
 			}
 			++k;
@@ -238,8 +260,8 @@ void aprxMAPGMM(std::vector<float>& noiseI, std::vector<float>& tempI, ImageSize
 	}
 
 	// Finish the aggregation by averaging all contribution
-	for(int k = 0; k < tempI.size(); ++k)	
-		tempI[k] /= count[k];
+	for(int k = 0; k < aggMAPI.size(); ++k)	
+		aggMAPI[k] /= count[k];
 }
 
 void loggausspdf(std::vector<float>& patches, int dim, int nbP, Model& model, float csta, std::vector<float>& results)

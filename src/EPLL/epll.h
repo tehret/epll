@@ -72,18 +72,28 @@ void EPLLhalfQuadraticSplit(
 		std::vector<Model>& models);
 
 /**
- * @brief Compute the approximative maximum a priori image reconstructed using the Gaussian mixture model represented by models
+ * @brief Computes an image resulting from the aggregation of the approximative
+ * MAP estimates given the noisy images. The a priori distribution is given by
+ * the pre-trained patch GMM.
  *
- * @param noiseI : Image that need denoising
- * @param tempI : Store the results of the reconstruction
- * @param imSize : Size of the image
+ * @param noisyI : Noisy input image
+ * @param aggMAPI : Output image with the aggregated patch MAP estimates
+ * @param imSize : Image size
  * @param sigma : Standard deviation of the noise
- * @param ps : Spatial size of the patch
- * @param psc : Number of channel to use for the denoising (defined by the model)
- * @param step : Step of the spatial grid used to extract the patches in the image
- * @param models : Stores the Gaussian mixture model (one Gaussian per entry of the array)
+ * @param ps : Patch size
+ * @param pc : Number of channels to use for the denoising (defined by the model)
+ * @param step : Step of the spatial grid of processed patches
+ * @param models : patch Gaussian mixture model
  **/
-void aprxMAPGMM(std::vector<float>& noiseI, std::vector<float>& tempI, ImageSize& imSize, float sigma, int ps, int psc, int step, std::vector<Model>& models);
+void aprxMAPGMM(
+		std::vector<float>& noisyI,
+		std::vector<float>& aggMAPI,
+		ImageSize& imSize,
+		float sigma,
+		int ps,
+		int pc,
+		int step,
+		std::vector<Model>& models);
 
 /**
  * @brief Compute the Gaussiian log pdf for different patches, the weight of the given Gaussian inside the GMM is taken into account
