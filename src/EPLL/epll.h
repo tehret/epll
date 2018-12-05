@@ -96,15 +96,20 @@ void aprxMAPGMM(
 		std::vector<Model>& models);
 
 /**
- * @brief Compute the Gaussiian log pdf for different patches, the weight of the given Gaussian inside the GMM is taken into account
+ * @brief Compute the Gaussiian log pdf for different patches, the weight of
+ * the given Gaussian inside the GMM is taken into account
  *
- * @param patches : Store the patches for which the probability needs to be computed
+ * @param patches : Patches for which the probability needs to be computed
  * @param dim : Dimension of a patch
  * @param nbP : Number of patches
  * @param model : Model of the Gaussian to be used 
- * @param csta : Precomputed constant set to dim + log(2*PI)
- * @param result : Store the probability for each patch
+ * @param result : Log Gaussian probability for each patch
  **/
-void loggausspdf(std::vector<float>& patches, int dim, int nbP, Model& model, float csta, std::vector<float>& result);
+void logGausspdf(
+		std::vector<float>& patches,
+		int dim,
+		int nbP,
+		Model& model,
+		std::vector<float>& results);
 
 #endif

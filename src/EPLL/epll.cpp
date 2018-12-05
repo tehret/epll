@@ -192,14 +192,13 @@ void aprxMAPGMM(
 	}
 
 	//Compute the weights for all patches at the same time
-	float csta = N * std::log(2*PI);
 	std::vector<std::vector<float> > weights(models.size(), std::vector<float>(nbP));
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic) num_threads(NTHREAD) \
 	shared(weights, models)
 #endif
 	for(int m = 0; m < models.size(); ++m)
-		loggausspdf(patches, N, nbP, models[m], csta, weights[m]);
+		logGausspdf(patches, N, nbP, models[m], weights[m]);
 
 	// Compute the denoised patches
 	k = 0;
@@ -264,29 +263,48 @@ void aprxMAPGMM(
 		aggMAPI[k] /= count[k];
 }
 
-void loggausspdf(std::vector<float>& patches, int dim, int nbP, Model& model, float csta, std::vector<float>& results)
+/**
+ * @brief Compute the Gaussiian log pdf for different patches, the weight of
+ * the given Gaussian inside the GMM is taken into account
+ *
+ * @param patches : Patches for which the probability needs to be computed
+ * @param dim : Dimension of a patch
+ * @param nbP : Number of patches
+ * @param model : Model of the Gaussian to be used
+ * @param result : Log Gaussian probability for each patch
+ **/
+void logGausspdf(
+		std::vector<float>& patches,
+		int dim,
+		int nbP,
+		Model& model,
+		std::vector<float>& results)
 {
-	// Initialize the results
-	for(int p = 0; p < nbP; ++p)
-		results[p] = 0.;
 
-	std::vector<float> output(patches.size());
+	std::vector<float> output(model.rank * nbP);
 
-	// For all patches provided: compute the log of the probability for the given Gaussian distribution
-	// First compute x.U.sqrt(D)
+	// Compute  R^{-1/2}Q^T x_i for all patches x_i in patches
+	/* NOTE: patches is a nbP x dim matrix (in column-major layout). Therefore each
+	 * patch x_i is a row in the matrix patches. model.invSqrtCov contains Q R^{-1/2}.
+	 * In order to avoid unnecessary traspositions, we compute patches * Q R^{-1/2}.
+	 */
 	productMatrix(output,
 			patches,
 			model.invSqrtCov,
 			nbP, model.rank, dim,
 			false, false);
 
+	// Initialize the results
+	float constant = dim * std::log(2*PI);
 	for(int p = 0; p < nbP; ++p)
 	{
-		// Compute xSx^T=(x.U.sqrt(D)) . (x.U.sqrt(D))^T
+		// squared L2 norm R^{-1/2}Q^T x_i
+		results[p] = 0.;
 		for(int d = 0; d < dim; ++d)
 			results[p] -= output[p + nbP*d]*output[p + nbP*d];
 
-		results[p] -= (csta + model.logdet); 
+		// add logdet, constants, etc
+		results[p] -= (constant + model.logdet);
 		results[p] /= 2.;
 		results[p] += model.logweight;
 	}
