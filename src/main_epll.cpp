@@ -123,13 +123,13 @@ int main(int argc, char **argv)
 		tmp_model.eigVects.resize(pdim*pdim);
 		tmp_model.invSqrtCov.resize(pdim*pdim);
 		tmp_model.eigVals.resize(pdim);
-		tmp_model.r = std::min(std::max(pdim*rank/100,1),pdim);
+		tmp_model.rank = std::min(std::max(pdim*rank/100,1),pdim);
 
 		std::vector<float> covMat(pdim*pdim);
 		for(int d = 0; d < pdim*pdim; ++d)
 			fscanf(covfile, "%f,", &covMat[d]);
 
-		int info = matrixEigs(covMat, pdim, tmp_model.r, tmp_model.eigVals, tmp_model.eigVects);
+		int info = matrixEigs(covMat, pdim, tmp_model.rank, tmp_model.eigVals, tmp_model.eigVects);
 		models.push_back(tmp_model);
 	}
 	fclose(wfile);
