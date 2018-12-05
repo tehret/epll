@@ -18,8 +18,8 @@
 #include <string>
 #include <sstream>
 
-#include "Utilities/cmd_option.h"
-#include "Utilities/LibImages.h"
+#include "cmd_option.h"
+#include "EPLL/LibImages.h"
 
 using namespace std;
 

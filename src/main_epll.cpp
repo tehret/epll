@@ -19,10 +19,10 @@
 #include <string>
 #include <sstream>
 
-#include "Utilities/LibImages.h"
+#include "EPLL/LibImages.h"
 #include "EPLL/epll.h"
 #include "EPLL/LibMatrix.h"
-#include "Utilities/cmd_option.h"
+#include "cmd_option.h"
 
 using namespace std;
 

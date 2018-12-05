@@ -1,13 +1,12 @@
 
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
-include_directories(${CMAKE_SOURCE_DIR}/src/Utilities)
 
 add_library(epll SHARED
 	epll.cpp
 	LibMatrix.cpp
-	../Utilities/iio.c
-	../Utilities/LibImages.cpp
-	../Utilities/mt19937ar.c
+	iio.c
+	LibImages.cpp
+	mt19937ar.c
 	)
 
 

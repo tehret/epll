@@ -2,7 +2,6 @@
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 
 include_directories(${CMAKE_SOURCE_DIR})
-include_directories(${CMAKE_SOURCE_DIR}/Utilities)
 include_directories(${CMAKE_SOURCE_DIR}/EPLL)
 
 add_executable(main_epll main_epll.cpp)
