@@ -234,22 +234,27 @@ void aprxMAPGMM(
 				patch[d] = patches[k + nbP*d];
 
 			// Compute the MAP of the patch according to best Gaussian component
-			std::vector<float> tempPatch(pdim);
-			productMatrix(tempPatch,
-					patch,
-					models[best].eigVects,
-					1, models[best].rank, pdim,
-					false, false);
-			std::vector<float> eigVecs(models[best].eigVects);
-			float *eigv = eigVecs.data();
+
+			// First project patch over the eigenvectors (only r of them):
+			// tempPatch <-- Q_{kmax}^T * patch, where Q_{kmax} is the eigenvector matrix,
+			std::vector<float> tempPatch(models[best].rank);
+			productMatrix(tempPatch,                  // A^T*B
+			              models[best].eigVects,      // A=eigVects, pdim x rank
+			              patch,                      // B=patch,    pdim x 1
+			              models[best].rank, 1, pdim, // dimensions
+			              true, false);               // transpose A, don't transpose B
+
+			// Apply shrinkage coefficients to patch components:
+			// tempPatch <-- S_{kmax} * tempPatch, with S_{kmax} the diagonal shrinkage matrix
 			for (unsigned k = 0; k < models[best].rank; ++k)
-			for (unsigned i = 0; i < pdim; ++i)
-				*eigv++ *= (models[best].eigVals[k] / (models[best].eigVals[k] + sigma2));
-			productMatrix(patch,
-					tempPatch,
-					eigVecs,
-					1, pdim, models[best].rank,
-					false, true);
+				tempPatch[k] *= (models[best].eigVals[k] / (models[best].eigVals[k] + sigma2));
+
+			// Reconstruct patch from shrunk components: patch = Q_{kmax} * tempPatch
+			productMatrix(patch,                       // A*B
+			              models[best].eigVects,       // A=eigVects,  pdim x rank
+			              tempPatch,                   // B=tempPatch, rank x 1
+			              pdim, 1, models[best].rank,  // dimensions
+			              false, false);               // don't transpose A nor B
 
 			// Add back the DC component
 			for(int d = 0; d < pdim; ++d)
