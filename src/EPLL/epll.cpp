@@ -121,146 +121,155 @@ void aprxMAPGMM(
 		int step,
 		std::vector<Model>& models)
 {
-	int N = ps*ps*pc;
+	int pdim = ps*ps*pc;
 	float sigma2 = sigma*sigma;
-	std::vector<float> count(noisyI.size());
 
-	std::vector<float> tempPatch(N);
-	std::vector<float> patch(N);
-	std::vector<float> tempVects;
+	int W = imSize.width, H = imSize.height, C = imSize.nChannels;
 
+	// Compute the mask of patches that need denoising
 	std::vector<int> mask(imSize.width*imSize.height*imSize.nChannels, 0);
-
-
-	// Compute the mask of patches that need denoising 
-	int nbP = 0;
-	for(int c = 0; c <= imSize.nChannels-pc; ++c)	
-	for(int y = 0; y <= imSize.height-ps; ++y)	
-	for(int x = 0; x <= imSize.width-ps; ++x)	
+	int nbP = 0; // number of patches
+	for(int y = 0; y <= H - ps; ++y)
+	for(int x = 0; x <= W - ps; ++x)
 	{
-		if((x % step == 0) || (x == imSize.width-ps))
-		if((y % step == 0) || (y == imSize.height-ps))
+		if((x % step == 0) || (x == W-ps))
+		if((y % step == 0) || (y == H-ps))
 		{
-			mask[x*imSize.nChannels + y*imSize.width*imSize.nChannels + c] = 1;
-			++nbP;
+			for(int c = 0; c <= C - pc; ++c)
+			{
+				mask[y*W*C + x*C + c] = 1;
+				++nbP;
+			}
 		}
 	}
 
-	std::vector<float> patches(N*nbP);
-	std::vector<float> means(nbP);
-
 	// Prepare the different objects in models:
-	// 1/ Compute the log of the determinant
-	// 2/ Precompute the matrix to fast compute the inverse of the covariance matrix
 	for(int m = 0; m < models.size(); ++m)
 	{
+		// Compute the log of the determinant
 		models[m].logdet = 0;
 		for(int v = 0; v < models[m].eigVals.size(); ++v)
 			models[m].logdet += std::log(models[m].eigVals[v] + sigma2);
 
+		// Precompute the matrix to fast compute the inverse of the covariance matrix
+		/* NOTE: in the notation of the IPOL article, this corresponds to
+		 * R_m^{-1/2} Q_m^T. The matrix Q_m contains the eigenvectors as columns,
+		 * and R_m is a diagonal matrix consisting of the addition of the eigenvalues
+		 * plus the noise variance. The product R_m^{-1/2} Q_m^T amounts to scaling
+		 * each eigenvector by corresponding coefficient in the diagonal of R_m^{-1/2}.
+		 * The matrix Q_m is stored in models[m].eigVects in column-major layout,
+		 * meaning that the first pdim elements are the first eigenvector, the next
+		 * pdim components the second, etc.
+		 */
 		float *invSqrtCov = models[m].invSqrtCov.data();
 		float *eigv = models[m].eigVects.data();
-		for (unsigned k = 0; k < models[m].rank; ++k)
-		for (unsigned i = 0; i < N; ++i)
+		for (int k = 0; k < models[m].rank; ++k) // for each eigenvector ...
+		for (int i = 0; i < pdim; ++i)           // ... scale all its entries
 			*invSqrtCov++ = (*eigv++) / std::sqrt(sigma2 + models[m].eigVals[k]);
 	}
 
 	// Extract patches
+	std::vector<float> patchesDC(nbP);     // DC components of the patches
+	std::vector<float> patches(pdim*nbP);
 	int k = 0;
-	for(int y = 0; y < imSize.height; ++y)	
-	for(int x = 0; x < imSize.width; ++x)	
-	for(int c = 0; c < imSize.nChannels; ++c)	
+	for(int y = 0; y < H; ++y)
+	for(int x = 0; x < W; ++x)
+	for(int c = 0; c < C; ++c)
 	{
-		if(mask[x*imSize.nChannels + y*imSize.width*imSize.nChannels + c] == 1)
+		if(mask[y*W*C + x*C + c] == 1)
 		{
-			// Compute the DC component (average patch)
-			means[k] = 0.f;
+			// Compute the DC component (average value of patch)
+			patchesDC[k] = 0.f;
 			for(int dy = 0; dy < ps; ++dy)
 			for(int dx = 0; dx < ps; ++dx)
 			for(int dc = 0; dc < pc; ++dc)
-				means[k] += noisyI[(x+dx)*imSize.nChannels + (y+dy)*imSize.width*imSize.nChannels + c+dc];
+				patchesDC[k] += noisyI[(y+dy)*W*C + (x+dx)*C + c+dc];
 
-			means[k] /= (float)N;
+			patchesDC[k] /= (float)pdim;
 
 			// Load patch into the specific vector while removing the DC component
-			for(int dc = 0, d = 0; dc < pc; ++dc)	
-			for(int dx = 0;        dx < ps; ++dx)	
-			for(int dy = 0;        dy < ps; ++dy, ++d)	
-				patches[k + nbP*d] = (noisyI[(x+dx)*imSize.nChannels + (y+dy)*imSize.width*imSize.nChannels + c+dc] - means[k]);
+			/* NOTE: patches is a nbP x pdim matrix stored in column-major layout */
+			for(int dc = 0, d = 0; dc < pc; ++dc)
+			for(int dx = 0;        dx < ps; ++dx)
+			for(int dy = 0;        dy < ps; ++dy, ++d)
+				patches[k + nbP*d] = (noisyI[(y+dy)*W*C + (x+dx)*C + c+dc] - patchesDC[k]);
+
 			++k;
 		}
 	}
 
-	//Compute the weights for all patches at the same time
-	std::vector<std::vector<float> > weights(models.size(), std::vector<float>(nbP));
+	// Compute the conditional mixing weights for all patches
+	std::vector<std::vector<float> > mixingWeights(models.size(), std::vector<float>(nbP));
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic) num_threads(NTHREAD) \
-	shared(weights, models)
+	shared(mixingWeights, models)
 #endif
 	for(int m = 0; m < models.size(); ++m)
-		logGausspdf(patches, N, nbP, models[m], weights[m]);
+		logGausspdf(patches, pdim, nbP, models[m], mixingWeights[m]);
 
-	// Compute the denoised patches
+	// Compute MAP estimate for each patch
+	std::vector<float> aggCount(noisyI.size(), 0.f);
 	k = 0;
-	for(int y = 0; y < imSize.height; ++y)	
-	for(int x = 0; x < imSize.width; ++x)	
-	for(int c = 0; c < imSize.nChannels; ++c)	
+	for(int y = 0; y < H; ++y)
+	for(int x = 0; x < W; ++x)
+	for(int c = 0; c < C; ++c)
 	{
-		// If this patch requires denoising
-		if(mask[x*imSize.nChannels + y*imSize.width*imSize.nChannels + c] == 1)
+		if(mask[y*C*W + x*C + c] == 1) // only process some patches
 		{
-			// Select the best Gaussian based on the probability estimated for each Gaussian of the GMM (weights of the GMM are taken into account)
+			// Select the best Gaussian component (highest conditional mixing weight)
 			int best = 0;
-			float bestv = weights[0][k];
+			float bestv = mixingWeights[0][k];
 			for(int m = 1; m < models.size(); ++m)
 			{
-				if(weights[m][k] > bestv)
+				if(mixingWeights[m][k] > bestv)
 				{
 					best = m;
-					bestv = weights[m][k];
+					bestv = mixingWeights[m][k];
 				}
 			}
 
 			// Extract the patch from the list of patches
-			for(int d = 0; d < N; ++d)
+			std::vector<float> patch(pdim);
+			for(int d = 0; d < pdim; ++d)
 				patch[d] = patches[k + nbP*d];
 
-			// Compute the MAP patch for the chosen Gaussian 
+			// Compute the MAP of the patch according to best Gaussian component
+			std::vector<float> tempPatch(pdim);
 			productMatrix(tempPatch,
 					patch,
 					models[best].eigVects,
-					1, models[best].rank, N,
+					1, models[best].rank, pdim,
 					false, false);
 			std::vector<float> eigVecs(models[best].eigVects);
 			float *eigv = eigVecs.data();
 			for (unsigned k = 0; k < models[best].rank; ++k)
-			for (unsigned i = 0; i < N; ++i)
+			for (unsigned i = 0; i < pdim; ++i)
 				*eigv++ *= (models[best].eigVals[k] / (models[best].eigVals[k] + sigma2));
 			productMatrix(patch,
 					tempPatch,
 					eigVecs,
-					1, N, models[best].rank,
+					1, pdim, models[best].rank,
 					false, true);
 
 			// Add back the DC component
-			for(int d = 0; d < N; ++d)
-				patch[d] += means[k];
+			for(int d = 0; d < pdim; ++d)
+				patch[d] += patchesDC[k];
 
 			// Aggregate the result on the result image
-			for(int dc = 0, d = 0; dc < pc; ++dc)	
-			for(int dx = 0;        dx < ps; ++dx)	
-			for(int dy = 0;        dy < ps; ++dy, ++d)	
+			for(int dc = 0, d = 0; dc < pc; ++dc)
+			for(int dx = 0;        dx < ps; ++dx)
+			for(int dy = 0;        dy < ps; ++dy, ++d)
 			{
-				aggMAPI[(x+dx)*imSize.nChannels + (y+dy)*imSize.width*imSize.nChannels + c+dc] += patch[d];
-				count[(x+dx)*imSize.nChannels + (y+dy)*imSize.width*imSize.nChannels + c+dc]++;
+				aggMAPI [(y+dy)*W*C + (x+dx)*C + c+dc] += patch[d];
+				aggCount[(y+dy)*W*C + (x+dx)*C + c+dc] ++;
 			}
 			++k;
 		}
 	}
 
-	// Finish the aggregation by averaging all contribution
-	for(int k = 0; k < aggMAPI.size(); ++k)	
-		aggMAPI[k] /= count[k];
+	// Normalize the aggregated image
+	for(int k = 0; k < aggMAPI.size(); ++k)
+		aggMAPI[k] /= aggCount[k];
 }
 
 /**
