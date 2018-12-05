@@ -37,8 +37,8 @@ int main(int argc, char **argv)
 
 	//! Paths to input images
 	using std::string;
-	const string  input_path   = clo_option("-i" , "" , "< input sequence");
-	const string  inbsc_path   = clo_option("-r" , "" , "< input sequence 2");
+	const string  input_path   = clo_option("-i" , "" , "< input image");
+	const string  inbsc_path   = clo_option("-r" , "" , "< input image 2");
 	const float   sigma        = clo_option("-s" , 20., "< noise std");
 	const string  outpsnr_path = clo_option("-f" , "psnr.txt" , "> where to write the PSNR informations");
 	const string  out_path     = clo_option("-o1", "original.png" , "> where to write the original image (used for tiff to png transformation)");

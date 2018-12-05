@@ -36,9 +36,9 @@ using namespace std;
 int main(int argc, char **argv)
 {
 	clo_usage("EPLL denoising");
-	clo_help(" NOTE: Input (<) and output (>) sequences are specified by their paths in printf format.\n");
+	clo_help(" NOTE: Input (<) and output (>).\n");
 
-	//! Paths to input/output sequences
+	//! Paths to input/output images
 	using std::string;
 	const string input_path = clo_option("-i"    , ""              , "< input image");
 	const string noisy_path = clo_option("-nsy"  , "noisy.tiff"    , "> noisy image");
@@ -70,7 +70,7 @@ int main(int argc, char **argv)
 	//! Check inputs
 	if (input_path == "")
 	{
-		fprintf(stderr, "%s: no input sequence.\nTry `%s --help' for more information.\n",
+		fprintf(stderr, "%s: no input images.\nTry `%s --help' for more information.\n",
 				argv[0], argv[0]);
 		return EXIT_FAILURE;
 	}
@@ -174,7 +174,7 @@ int main(int argc, char **argv)
 		transformColorSpace(diff, imSize, false);
 	}
 
-	//! Save output sequences
+	//! Save output images
 	saveImage(final_path.c_str(), final,  imSize);
 	saveImage(diff_path.c_str(), diff,   imSize);
 
