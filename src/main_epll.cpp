@@ -19,7 +19,6 @@
 #include <string>
 #include <sstream>
 
-#include "Utilities/Utilities.h"
 #include "Utilities/LibImages.h"
 #include "EPLL/epll.h"
 #include "EPLL/LibMatrix.h"

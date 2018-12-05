@@ -18,7 +18,6 @@
 #include <string>
 #include <sstream>
 
-#include "Utilities/Utilities.h"
 #include "Utilities/cmd_option.h"
 #include "Utilities/LibImages.h"
 

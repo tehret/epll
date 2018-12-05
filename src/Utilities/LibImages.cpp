@@ -18,7 +18,6 @@
  **/
 
 #include "LibImages.h"
-#include "Utilities.h"
 #include "mt19937ar.h"
 
 #include <unistd.h> // getpid to init random seed
