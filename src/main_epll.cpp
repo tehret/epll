@@ -50,7 +50,7 @@ int main(int argc, char **argv)
 
 	//! General parameters
 	const float sigma       = clo_option("-sigma", 0, "< standard deviation of the noise");
-	const bool  add_noise = clo_option("-add", true, "< add noise of given standard deviation sigma");
+	const bool  add_noise   = clo_option("-add", true, "< add noise of given standard deviation sigma");
 	const int   patch_size  = clo_option("-ps",    8, "< patch size. It must be the same than the one of the model");
 	const int   patch_size_channels  = clo_option("-psc",   1, "< number of channel of the model (1 for a learning in grayscale and 3 for one in color). It must be the same than the one of the model");
 	const int   step        = std::min(patch_size, clo_option("-st",    1, "< step size"));
@@ -64,8 +64,11 @@ int main(int argc, char **argv)
 	int firstFrame = 1, lastFrame = 1, frameStep = 1;
 	bool verbose = false;
 
-	//! Defaults betas suggested in the original article
-	std::vector<float> betas{1,4,8,16,32}; 
+    std::vector<float> betas;
+    if(sigma < 30)
+        betas = {1,4,8,16,32,64};
+    else
+        betas = {1,2,8,13,32,64};
 
 	//! Check inputs
 	if (input_path == "")
