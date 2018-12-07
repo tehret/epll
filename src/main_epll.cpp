@@ -51,8 +51,8 @@ int main(int argc, char **argv)
 	const float sigma       = clo_option("-sigma", 0, "< standard deviation of the noise");
 	const bool  add_noise   = clo_option("-add", true, "< add noise of given standard deviation sigma");
 	const int   patch_size  = clo_option("-ps", 8, "< patch size. It must be the same than the one of the model");
-	const int   patch_size_channels = clo_option("-psc", 1, "< number of channel of the model
-			                                       (1 for grayscale or 3 for color). It must be the same than the one of the model");
+	const int   patch_size_channels = clo_option("-psc", 1, "< number of channel of the model"
+			                                       "(1 for grayscale or 3 for color). It must be the same than the one of the model");
 	const int   step        = std::min(patch_size, clo_option("-st", 1, "< step size"));
 	const int   iter        = clo_option("-T", 1, "< nb iter");
 	const bool  partialPSNR = clo_option("-psnr", true, "< print partial PSNR");
