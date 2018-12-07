@@ -64,8 +64,11 @@ int main(int argc, char **argv)
 	int firstFrame = 1, lastFrame = 1, frameStep = 1;
 	bool verbose = false;
 
-	//! Defaults betas suggested in the original article
-	std::vector<float> betas{1,4,8,16,32}; 
+    std::vector<float> betas;
+    if(sigma < 30)
+        betas = {1,4,8,16,32,64};
+    else
+        betas = {1,2,8,13,32,64};
 
 	//! Check inputs
 	if (input_path == "")
