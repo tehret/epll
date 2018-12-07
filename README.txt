@@ -48,7 +48,9 @@ Running './main_epll -i image.png -cmodel ../../models/sigma_gs_original.txt -wm
 './main_epll --help' list all available options.
 The multiscale version is also available using "denoising_multiscale.sh". An example of usage is './denoising_multiscale.sh input.png 20 output.png "-cmodel ../../models/sigma_gs_original.txt -wmodel ../../models/w_gs_original.txt"' to denoise a degraded version of input.png with an additive white Gaussian noise o stndard deviation 20, the result is available in output.png. 
 
-4. This project contains the following source files:
+4. Three models are provided with the code in the models folder. We provide the original grayscale model "gs_homemade" and one we trained "gs_homemade". These models can directly be used with color images (in this case the denoising will be channel by channel, setting the parameter -yuv to true means that the denoising is done in the YUV colorspace instead of RGB). We also provide a color model "color_homemade" that requires setting the parameter -psc to 3 to denoise color images.
+
+5. This project contains the following source files:
 	src/main_epll.cpp
 	src/denoising_multiscale.sh
 	src/epll/epll.h
@@ -69,7 +71,7 @@ The multiscale version is also available using "denoising_multiscale.sh". An exa
 It also contains the source code of the multiscaler tool from https://github.com/npd/multiscaler/ in multiscaler.
 
 
-5. The files that have been reviewed for IPOL publication are
+6. The files that have been reviewed for IPOL publication are
 TODO ONCE REVIEW IS DONE
 
 
