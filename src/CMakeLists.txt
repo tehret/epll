@@ -5,7 +5,6 @@ include_directories(${CMAKE_SOURCE_DIR})
 include_directories(${CMAKE_SOURCE_DIR}/EPLL)
 
 add_executable(main_epll main_epll.cpp)
-add_executable(comp_res compute_results.cpp)
 
 message("-- LAPACK libs: " ${LAPACK_LIBRARIES})
 message("-- LAPACK incs: " ${LAPACK_INCLUDES})
