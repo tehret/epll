@@ -10,9 +10,7 @@ OVERVIEW
 
 This source code provides an implementation of EPLL developped in "D. Zoran and Y. Weiss, From learning models of natural image patches to whole image restoration, ICCV 2011".
 It also extends the original work to color images, and provides a script to use
-it in conjunction with the multiscaler of 
-
-[BLA BLA BLA](link)
+it in conjunction with the multiscaler of [Nicola Pierazzo and Gabriele Facciolo](https://github.com/npd/multiscaler).
 
 This code is part of an [IPOL](http://www.ipol.im/) publication. Plase cite it
 if you use this code as part of your research.
@@ -55,29 +53,39 @@ The multiscale version is also available using "denoising_multiscale.sh". An exa
 5. This project contains the following source files:
 	src/main_epll.cpp
 	src/denoising_multiscale.sh
-	src/epll/epll.h
-	src/epll/epll.cpp
-    src/epll/LibMatrix.h
-    src/epll/LibMatrix.cpp
-	src/Utilities/iio.h
-	src/Utilities/iio.c
-	src/Utilities/LibImages.h
-	src/Utilities/LibImages.cpp
-	src/Utilities/cmd_option.h
-	src/Utilities/comparators.h
-	src/Utilities/mt19937ar.h
-	src/Utilities/mt19937ar.c
-	src/Utilities/Utilities.h
-	src/Utilities/Utilities.cpp
+	src/cmd_option.h
+	src/EPLL/epll.h
+	src/EPLL/epll.cpp
+    src/EPLL/LibMatrix.h
+    src/EPLL/LibMatrix.cpp
+	src/EPLL/iio.h
+	src/EPLL/iio.c
+	src/EPLL/LibImages.h
+	src/EPLL/LibImages.cpp
+	src/EPLL/mt19937ar.h
+	src/EPLL/mt19937ar.c
 
 It also contains the source code of the multiscaler tool from https://github.com/npd/multiscaler/ in multiscaler.
 
 
 6. The files that have been reviewed for IPOL publication are
-TODO ONCE REVIEW IS DONE
+	src/main_epll.cpp
+	src/denoising_multiscale.sh
+	src/cmd_option.h
+	src/EPLL/epll.h
+	src/EPLL/epll.cpp
+    src/EPLL/LibMatrix.h
+    src/EPLL/LibMatrix.cpp
+	src/EPLL/iio.h
+	src/EPLL/iio.c
+	src/EPLL/LibImages.h
+	src/EPLL/LibImages.cpp
+	src/EPLL/mt19937ar.h
+	src/EPLL/mt19937ar.c
 
 
-# ABOUT THIS FILE
+ABOUT THIS FILE
+---------------
 
 Copyright 2018 IPOL Image Processing On Line http://www.ipol.im/
 
