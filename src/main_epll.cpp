@@ -57,7 +57,7 @@ int main(int argc, char **argv)
 	const int   iter        = clo_option("-T", 1, "< nb iter");
 	const bool  partialPSNR = clo_option("-psnr", true, "< print partial PSNR");
 
-	const bool  changeBasis = clo_option("-yuv", false, "< use YUV instead of RGB colorspace (if color image)");
+	const bool  changeBasis = clo_option("-opp", false, "< use OPP instead of RGB colorspace (if color image)");
 	const int   rank        = clo_option("-r", 100, "< maximum rank used for the covariance of the Gaussians (as a percentage)");
 
 
@@ -68,7 +68,7 @@ int main(int argc, char **argv)
     if(sigma < 30)
         betas = {1,4,8,16,32,64};
     else
-        betas = {1,2,8,13,32,64};
+        betas = {1,2,8,16,32,64};
 
 	//! Check inputs
 	if (input_path == "")

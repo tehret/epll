@@ -148,9 +148,7 @@ void addNoise(
 
 	//! Initialization
 	o_imNoisy = i_im;
-//	mt_init_genrand((unsigned long int) time (NULL) + (unsigned long int) getpid());
-	mt_init_genrand(0);
-	std::cout << "WARNING: noise seed is 0" << std::endl;
+	mt_init_genrand((unsigned long int) time (NULL) + (unsigned long int) getpid());
 
 	//! Add noise
 	for (unsigned k = 0; k < i_im.size(); k++) {
@@ -233,11 +231,11 @@ int computeDiff(
 }
 
 /**
- * @brief Transform the color space of an image, from RGB to YUV, or vice-versa.
+ * @brief Transform the color space of an image, from RGB to OPP, or vice-versa.
  *
  * @param io_im: image on which the transform will be applied;
  * @param p_imSize: size of io_im;
- * @param p_isForward: if true, go from RGB to YUV, otherwise go from YUV to RGB.
+ * @param p_isForward: if true, go from RGB to OPP, otherwise go from OPP to RGB.
  *
  * @return none.
  **/
@@ -256,7 +254,7 @@ void transformColorSpace(
 	const unsigned wh     = width * height;
 	vector<float> imTmp(wh * chnls);
 
-	//! RGB to YUV
+	//! RGB to OPP
 	if (p_isForward) {
 		if (chnls == 3) {
 			const unsigned red   = 0;
@@ -267,15 +265,12 @@ void transformColorSpace(
 			const float c = 2.f * a * sqrtf(2.f);
 
 			for (unsigned k = 0; k < wh; k++) {
-				//! Y channel
 				imTmp[k*chnls + red] = a * (io_im[k*chnls + red  ] +
 				                            io_im[k*chnls + green] +
 				                            io_im[k*chnls + blue ]);
 
-				//! U channel
 				imTmp[k*chnls + green] = b * (io_im[k*chnls + red] - io_im[k*chnls + blue]);
 
-				//! V channel
 				imTmp[k*chnls + blue] = c * (0.25f * io_im[k*chnls + red  ]
 				                            - 0.5f * io_im[k*chnls + green]
 				                            +0.25f * io_im[k*chnls + blue ]);
@@ -299,7 +294,7 @@ void transformColorSpace(
 			}
 		}
 	}
-	//! YUV to RGB
+	//! OPP to RGB
 	else {
 		if (chnls == 3) {
 			const unsigned red   = 0;

@@ -122,11 +122,11 @@ int computeDiff(
 
 
 /**
- * @brief Transform the color space of an image, from RGB to YUV, or vice-versa.
+ * @brief Transform the color space of an image, from RGB to OPP, or vice-versa.
  *
  * @param io_im: image on which the transform will be applied;
  * @param p_imSize: size of io_im;
- * @param p_isForward: if true, go from RGB to YUV, otherwise go from YUV to RGB.
+ * @param p_isForward: if true, go from RGB to OPP, otherwise go from OPP to RGB.
  *
  * @return none.
  **/
