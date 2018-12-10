@@ -48,7 +48,7 @@ USAGE
 
 The following commands have to be run from the `build/bin` folder:
 
-List all available options:</br>
+List all available options:
 $ ./main_epll --help
 
 There are 4 mandatory input arguments:
