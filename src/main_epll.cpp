@@ -64,11 +64,11 @@ int main(int argc, char **argv)
 	int firstFrame = 1, lastFrame = 1, frameStep = 1;
 	bool verbose = false;
 
-    std::vector<float> betas;
-    if(sigma < 30)
-        betas = {1,4,8,16,32,64};
-    else
-        betas = {1,2,8,16,32,64};
+	std::vector<float> betas;
+	if(sigma < 30)
+		betas = {1,4,8,16,32,64};
+	else
+		betas = {1,2,8,16,32,64};
 
 	//! Check inputs
 	if (input_path == "")
@@ -164,13 +164,13 @@ int main(int argc, char **argv)
 	computeDiff(original, final, diff, sigma);
 
 	//! Go back to the usual range [0,255] before saving the images
-	for(int i = 0; i < noisy.size(); ++i)	
+	for(int i = 0; i < noisy.size(); ++i)
 	{
 		final[i] *= 255.;
 		diff[i] *= 255.;
 	}
 
-    //! Go back to RGB colorspace if necessary
+	//! Go back to RGB colorspace if necessary
 	if(changeBasis)
 	{
 		transformColorSpace(final, imSize, false);

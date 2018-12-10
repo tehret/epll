@@ -8,7 +8,9 @@ IMPLEMENTATION OF THE EPLL IMAGE DENOISING ALGORITHM
 OVERVIEW
 --------
 
-This source code provides an implementation of EPLL developped in "D. Zoran and Y. Weiss, From learning models of natural image patches to whole image restoration, ICCV 2011".
+This source code provides an implementation of EPLL developped in "D. Zoran and
+Y. Weiss, From learning models of natural image patches to whole image
+restoration, ICCV 2011".
 It also extends the original work to color images, and provides a script to use
 it in conjunction with the multiscaler of [Nicola Pierazzo and Gabriele Facciolo](https://github.com/npd/multiscaler).
 
@@ -20,69 +22,108 @@ COMPILATION
 
 The code is compilable on Unix/Linux and hopefully on Mac OS (not tested!). 
 
-Compilation: requires the cmake and make programs.
+**Compilation:** requires the cmake and make programs.
 
-Dependencies: FFTW3, CBLAS, LAPACKE, OpenMP [can be disabled], iio (which requires libpng, libtiff and libjpeg).
+**Dependencies:** CBLAS, LAPACKE, OpenMP [can be disabled]. 
+For image i/o we use [Enric Meinhardt's iio](https://github.com/mnhrdt/iio),
+which requires libpng, libtiff and libjpeg.
  
-USAGE
------
-
-1. Download the code package and extract it. Go to that directory. 
-
-2. Configure and compile the source code using cmake and make. 
-It is recommended that you create a folder for building:
+Configure and compile the source code using cmake and make.  It is recommended
+that you create a folder for building:
 
 UNIX/LINUX/MAC:
+```
 $ mkdir build; cd build
 $ cmake ..
 $ make
+```
 
-Binaries will be created in build/bin folder.
+Binaries will be created in `build/bin folder`.
 
 NOTE: By default, the code is compiled with OpenMP multithreaded
 parallelization enabled (if your system supports it). 
-The number of threads used by the code is defined in epll/epll.h.
+The number of threads used by the code is defined in `epll/epll.h`.
 
-3. Usage instruction:
-Running './main_epll -i image.png -cmodel ../../models/sigma_gs_original.txt -wmodel ../../models/w_gs_original.txt -sigma 20' computes the result using the method with the original Gaussian mixture models after adding an additive white Gaussian noise of standard deviation 20. The result is available in denoised.tiff.
-'./main_epll --help' list all available options.
-The multiscale version is also available using "denoising_multiscale.sh". An example of usage is './denoising_multiscale.sh input.png 20 output.png "-cmodel ../../models/sigma_gs_original.txt -wmodel ../../models/w_gs_original.txt"' to denoise a degraded version of input.png with an additive white Gaussian noise o stndard deviation 20, the result is available in output.png. 
+USAGE
+-----
 
-4. Three models are provided with the code in the models folder. We provide the original grayscale model "gs_homemade" and one we trained "gs_homemade". These models can directly be used with color images (in this case the denoising will be channel by channel, setting the parameter -yuv to true means that the denoising is done in the YUV colorspace instead of RGB). We also provide a color model "color_homemade" that requires setting the parameter -psc to 3 to denoise color images.
+The following commands have to be run from the `build/bin` folder:
 
-5. This project contains the following source files:
-	src/main_epll.cpp
-	src/denoising_multiscale.sh
-	src/cmd_option.h
-	src/EPLL/epll.h
-	src/EPLL/epll.cpp
-    src/EPLL/LibMatrix.h
-    src/EPLL/LibMatrix.cpp
-	src/EPLL/iio.h
-	src/EPLL/iio.c
-	src/EPLL/LibImages.h
-	src/EPLL/LibImages.cpp
-	src/EPLL/mt19937ar.h
-	src/EPLL/mt19937ar.c
+List all available options:</br>
+```./main_epll --help```
 
-It also contains the source code of the multiscaler tool from https://github.com/npd/multiscaler/ in multiscaler.
+There are 4 mandatory input arguments:
+* `-i` the input image
+* `-cmodel` the GMM covariances
+* `-wmodel` the GMM weights
+* `-sigma` the noise level (additive white Gaussian noise, AGWN)
+
+We provide three trained models in the `models/` folder:
+* `gs_original:` GMM for grayscale patches proposed in the original work of Zoran and Weiss
+* `gs_homemade:` our GMM for grayscale patches
+* `color_homemade:` our GMM for RGB patches
+
+-----
+
+The following command denoises an image using the GMMs trained in the original
+article.
+
+```./main_epll -i image.png -cmodel ../../models/sigma_gs_original.txt -wmodel ../../models/w_gs_original.txt -sigma 20```
+
+Noise of std. dev. 20 is added by the program before denoising (use option
+`-add 0` if the input image already has noise). The result is
+available in `denoised.tiff`. If the input image is color, the grayscale model
+is applied channel by channel.  One can choose between two colorspaces: RGB
+(default) and OPP by setting `-opp 1`.
+
+-----
+
+If the model trained for RGB patches is used, then we must specify that the model 
+has three channels by passing the argument `-psc 3`:
+
+```./main_epll -i image.png -cmodel ../../models/sigma_color_homemade.txt -wmodel ../../models/w_color_homemade.txt -psc 3 -sigma 20```
+
+**NOTE:** the `color_homemade` GMM was trained in the RGB colorspace. It should not be 
+used with `-opp 1`.
+
+-----
+
+To use the multiscaler, we provide the BASH script `denoising_multiscale.sh`.
+Examples are:
+
+```./denoising_multiscale.sh input.png 20 output.png "-cmodel ../../models/sigma_gs_original.txt -wmodel ../../models/w_gs_original.txt -opp 1" ```
+
+```./denoising_multiscale.sh input.png 20 output.png "-cmodel ../../models/sigma_color_original.txt -wmodel ../../models/w_color_original.txt -psc 3" ```
 
 
-6. The files that have been reviewed for IPOL publication are
-	src/main_epll.cpp
-	src/denoising_multiscale.sh
-	src/cmd_option.h
-	src/EPLL/epll.h
-	src/EPLL/epll.cpp
-    src/EPLL/LibMatrix.h
-    src/EPLL/LibMatrix.cpp
-	src/EPLL/iio.h
-	src/EPLL/iio.c
-	src/EPLL/LibImages.h
-	src/EPLL/LibImages.cpp
-	src/EPLL/mt19937ar.h
-	src/EPLL/mt19937ar.c
+FILES
+-----
 
+This project contains the following source files:
+```
+	main function:            src/main_epll.cpp
+	multiscaler script:       src/denoising_multiscale.sh
+	command line parsing:     src/cmd_option.h
+	epll implementation:      src/EPLL/epll.h
+	                          src/EPLL/epll.cpp
+	basic matrix operations:  src/EPLL/LibMatrix.h
+	                          src/EPLL/LibMatrix.cpp
+	image i/o:                src/EPLL/iio.h
+	                          src/EPLL/iio.c
+	image container:          src/EPLL/LibImages.h
+	                          src/EPLL/LibImages.cpp
+	random number genernator: src/EPLL/mt19937ar.h
+	                          src/EPLL/mt19937ar.c
+	GMM models:               models/sigma_color_homemade.txt
+	                          models/w_color_homemade.txt
+	                          models/sigma_gs_homemade.txt
+	                          models/w_gs_homemade.txt
+	                          models/sigma_gs_original.txt
+	                          models/w_gs_original.txt
+```
+
+It also contains the source code of the [multiscaler
+tool](https://github.com/npd/multiscaler/) in folder `src/multiscaler`.
 
 ABOUT THIS FILE
 ---------------

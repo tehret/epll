@@ -28,8 +28,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/modules/
 
 ###############################################################################
 
-find_package( CBLAS REQUIRED )
-find_package( LAPACKE REQUIRED )
+find_package (CBLAS REQUIRED)
+find_package (LAPACKE REQUIRED)
 find_package (TIFF REQUIRED)
 find_package (JPEG REQUIRED)
 find_package (PNG REQUIRED)
