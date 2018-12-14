@@ -140,7 +140,7 @@ void aprxMAPGMM(
 	{
 		// Compute the log of the determinant
 		models[m].logdet = 0;
-		for(int v = 0; v < models[m].eigVals.size(); ++v)
+		for(int v = 0; v < models[m].rank; ++v)
 			models[m].logdet += std::log(models[m].eigVals[v] + sigma2);
 
 		// Precompute the matrix to fast compute the inverse of the covariance matrix
@@ -282,7 +282,6 @@ void logGausspdf(
 		Model& model,
 		std::vector<float>& results)
 {
-
 	std::vector<float> output(model.rank * nbP);
 
 	// Compute  R^{-1/2}Q^T x_i for all patches x_i in patches
@@ -302,7 +301,7 @@ void logGausspdf(
 	{
 		// squared L2 norm R^{-1/2}Q^T x_i
 		results[p] = 0.;
-		for(int d = 0; d < dim; ++d)
+		for(int d = 0; d < model.rank; ++d)
 			results[p] -= output[p + nbP*d]*output[p + nbP*d];
 
 		// add logdet, constants, etc
