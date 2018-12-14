@@ -52,10 +52,9 @@ List all available options:
 $ ./main_epll --help
 
 There are 4 mandatory input arguments:
-* -i     : the input image
-* -cmodel: the GMM covariances
-* -wmodel: the GMM weights
-* -sigma : the noise level (additive white Gaussian noise, AGWN)
+* -i    : the input image
+* -model: the GMM models
+* -sigma: the noise level (additive white Gaussian noise, AGWN)
 
 We provide three trained models in the `models/` folder:
 * `gs_original:` GMM for grayscale patches proposed in the work of Zoran and Weiss
@@ -67,20 +66,13 @@ We provide three trained models in the `models/` folder:
 The following command denoises an image using the GMMs trained in the original
 article.
 
-$ ./main_epll -i image.png -cmodel ../../models/sigma_gs_original.txt -wmodel ../../models/w_gs_original.txt -sigma 20
+$ ./main_epll -i image.png -model ../../models/gs_original.txt -sigma 20
 
 Noise of std. dev. 20 is added by the program before denoising (use option
 `-add 0` if the input image already has noise). The result is
 available in `denoised.tiff`. If the input image is color, the grayscale model
 is applied channel by channel.  One can choose between two colorspaces: RGB
 (default) and OPP by setting `-opp 1`.
-
------
-
-If the model trained for RGB patches is used, then we must specify that the model 
-has three channels by passing the argument `-psc 3`:
-
-$ ./main_epll -i image.png -cmodel ../../models/sigma_color_homemade.txt -wmodel ../../models/w_color_homemade.txt -psc 3 -sigma 20
 
 NOTE: the `color_homemade` GMM was trained in the RGB colorspace. It should not be 
 used with `-opp 1`.
@@ -90,9 +82,9 @@ used with `-opp 1`.
 To use the multiscaler, we provide the BASH script `denoising_multiscale.sh`.
 Examples are:
 
-$ ./denoising_multiscale.sh input.png 20 output.png "-cmodel ../../models/sigma_gs_original.txt -wmodel ../../models/w_gs_original.txt -opp 1" 
+$ ./denoising_multiscale.sh input.png 20 output.png "-model ../../models/gs_original.txt -opp 1" 
 
-$ ./denoising_multiscale.sh input.png 20 output.png "-cmodel ../../models/sigma_color_original.txt -wmodel ../../models/w_color_original.txt -psc 3"
+$ ./denoising_multiscale.sh input.png 20 output.png "-model ../../models/color_original.txt
 
 
 FILES
@@ -113,12 +105,9 @@ This project contains the following source files:
 	                          src/EPLL/LibImages.cpp
 	random number genernator: src/EPLL/mt19937ar.h
 	                          src/EPLL/mt19937ar.c
-	GMM models:               models/sigma_color_homemade.txt
-	                          models/w_color_homemade.txt
-	                          models/sigma_gs_homemade.txt
-	                          models/w_gs_homemade.txt
-	                          models/sigma_gs_original.txt
-	                          models/w_gs_original.txt
+	GMM models:               models/color_homemade.txt
+	                          models/gs_homemade.txt
+	                          models/gs_original.txt
 
 It also contains the source code of the multiscaler
 (https://github.com/npd/multiscaler/) in folder `src/multiscaler`.
