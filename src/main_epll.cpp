@@ -40,20 +40,15 @@ int main(int argc, char **argv)
 
 	//! Paths to input/output images
 	using std::string;
-	const string input_path = clo_option("-i"    , ""              , "< input image");
-	const string noisy_path = clo_option("-nsy"  , "noisy.tiff"    , "> noisy image");
-	const string diff_path  = clo_option("-diff" , "diff.tiff"     , "> difference image");
-	const string final_path = clo_option("-deno" , "denoised.tiff" , "> denoised image");
-	const string cov_model_path = clo_option("-cmodel" , "covs_opt.txt", "< model containing the covariance of the Gaussians");
-	const string w_model_path   = clo_option("-wmodel" , "w_opts.txt"  , "< model containing the weigths of the Gaussians");
+	const string input_path = clo_option("-i"    , ""                        , "< input image");
+	const string noisy_path = clo_option("-nsy"  , "noisy.tiff"              , "> noisy image");
+	const string diff_path  = clo_option("-diff" , "diff.tiff"               , "> difference image");
+	const string final_path = clo_option("-deno" , "denoised.tiff"           , "> denoised image");
+	const string model_path = clo_option("-model", "grayscale_original.txt"  , "< model containing the covariance of the Gaussians and their weights");
 
 	//! General parameters
 	const float sigma       = clo_option("-sigma", 0, "< standard deviation of the noise");
 	const bool  add_noise   = clo_option("-add", true, "< add noise of given standard deviation sigma");
-	const int   patch_size  = clo_option("-ps", 8, "< patch size. It must be the same than the one of the model");
-	const int   patch_size_channels = clo_option("-psc", 1, "< number of channel of the model"
-			                                       "(1 for grayscale or 3 for color). It must be the same than the one of the model");
-	const int   step        = std::min(patch_size, clo_option("-st", 1, "< step size"));
 	const int   iter        = clo_option("-T", 1, "< nb iter");
 	const bool  partialPSNR = clo_option("-psnr", true, "< print partial PSNR");
 
@@ -97,9 +92,6 @@ int main(int argc, char **argv)
 	else
 		noisy = original;
 
-	if(patch_size <= 0)
-		return EXIT_FAILURE;
-
 	if(changeBasis)
 	{
 		transformColorSpace(noisy, imSize, true);
@@ -107,19 +99,31 @@ int main(int argc, char **argv)
 	}
 
 	//! Loads the covs and the weights
-	FILE* wfile = fopen(w_model_path.c_str(), "r");
-	FILE* covfile = fopen(cov_model_path.c_str(), "r");
+	FILE* file = fopen(model_path.c_str(), "r");
+
+    // Check if the model file exist, exit otherwise
+    if(!file)
+    {
+		fprintf(stderr, "%s: incorrect model file.\nTry `%s --help' for more information.\n",
+				argv[0], argv[0]);
+		return EXIT_FAILURE;
+    }
+
+	//! Diagonalize the covariance matrices for the following computations. If speed is necessary, 
+	//! these can be pre-saved diagonalized. In practice it this computation is quite fast anyway 
+	//! and is in no way a bottleneck.
+    int patch_size, patch_size_channels;
+    fscanf(file, "%d %d\n", &patch_size, &patch_size_channels);
+
+    // The step should not be larger than the patch size otherwise some parts of image are missiing
+	const int   step = clo_option("-st", 1, "< step size");
 
 	int pdim = patch_size*patch_size*patch_size_channels;
 	std::vector<Model> models;
 	Model tmp_model;
 	float w;
 	int kpt = 0;
-
-	//! Diagonalize the covariance matrices for the following computations. If speed is necessary, 
-	//! these can be pre-saved diagonalized. In practice it this computation is quite fast anyway 
-	//! and is in no way a bottleneck.
-	while(fscanf(wfile, "%f,", &w) != EOF)
+	while(fscanf(file, "%f,", &w) != EOF)
 	{
 		tmp_model.logweight = std::log(w);
 		tmp_model.eigVects.resize(pdim*pdim);
@@ -129,14 +133,12 @@ int main(int argc, char **argv)
 
 		std::vector<float> covMat(pdim*pdim);
 		for(int d = 0; d < pdim*pdim; ++d)
-			fscanf(covfile, "%f,", &covMat[d]);
+			fscanf(file, "%f,", &covMat[d]);
 
 		int info = matrixEigs(covMat, pdim, tmp_model.rank, tmp_model.eigVals, tmp_model.eigVects);
 		models.push_back(tmp_model);
 	}
-	fclose(wfile);
-	fclose(covfile);
-
+	fclose(file);
 
 	printf("Loaded %d models\n", models.size());
 
