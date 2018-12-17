@@ -101,21 +101,21 @@ int main(int argc, char **argv)
 	//! Loads the covs and the weights
 	FILE* file = fopen(model_path.c_str(), "r");
 
-    // Check if the model file exist, exit otherwise
-    if(!file)
-    {
+	// Check if the model file exist, exit otherwise
+	if(!file)
+	{
 		fprintf(stderr, "%s: incorrect model file.\nTry `%s --help' for more information.\n",
 				argv[0], argv[0]);
 		return EXIT_FAILURE;
-    }
+	}
 
 	//! Diagonalize the covariance matrices for the following computations. If speed is necessary, 
 	//! these can be pre-saved diagonalized. In practice it this computation is quite fast anyway 
 	//! and is in no way a bottleneck.
-    int patch_size, patch_size_channels;
-    fscanf(file, "%d %d\n", &patch_size, &patch_size_channels);
+	int patch_size, patch_size_channels;
+	fscanf(file, "%d %d\n", &patch_size, &patch_size_channels);
 
-    // The step should not be larger than the patch size otherwise some parts of image are missiing
+	// The step should not be larger than the patch size otherwise some parts of image are missiing
 	const int   step = clo_option("-st", 1, "< step size");
 
 	int pdim = patch_size*patch_size*patch_size_channels;
