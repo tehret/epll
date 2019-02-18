@@ -8,18 +8,10 @@
 # version. You should have received a copy of this license along
 # this program. If not, see <http://www.gnu.org/licenses/>.
 
-# dctdenoising_multi.sh 
-#        noisy.tif
-#        40
-#        out.tif      # also creates out.tif.non.tif
-#        "-w 8 -1"    # epll parameters (optional)
-#        4            # LEVELS of pyramid (default: 4 = auto) (optional)
-#        2            # R_PYR pyramid ratio: 2 (optional), 1.5 also possible
-#        0.7          # PAR_PYR recomposition ratio : 0.7 (optional)
-
 if [ $# -lt 4 ]; then
-   echo "$0 noisy.tif sigma out.tif"
-   echo "    \"-w 8 -1\"  # dctdenoising params (optional)"
+   echo "$0 input.tif sigma out.tif"
+   echo "    True         # Add noise"
+   echo "    \"-w 8 -1\"  # epll params"
    echo "    4            # LEVELS of pyramid (default: 4) (optional)"
    echo "    2            # R_PYR pyramid ratio: 2 (optional), 1.5 also possible"
    echo "    0.7          # PAR_PYR recomposition ratio : 0.7 (optional)"
@@ -29,26 +21,32 @@ fi
 INPUT=$1
 NOISE=$2
 OUTPUT=$3
-EPLL_ARGS=$4
+ADD_NOISE=$4
+EPLL_ARGS=$5
 LEVELS=4
 R_PYR=2   
 PAR_PYR=0.7
 
-if [ -n "$5" ]; then
-   LEVELS=$5
-fi
 if [ -n "$6" ]; then
-   R_PYR=$6
+   LEVELS=$6
 fi
 if [ -n "$7" ]; then
-   PAR_PYR=$7
+   R_PYR=$7
+fi
+if [ -n "$8" ]; then
+   PAR_PYR=$8
 fi
 
 DEC_ARGS="-r ${R_PYR}"
 MS_ARGS="-c ${PAR_PYR}"
 
 # Create the noisy version of the image
+if [ "$ADD_NOISE" = True ]
+then 
 main_epll -i ${INPUT} -sigma $NOISE -ps 0
+else
+main_epll -i ${INPUT} -sigma 0 -ps 0
+fi
 
 # Decompose the noisy image into the LEVELS scales requested
 decompose noisy.tiff level_ ${LEVELS} .tiff ${DEC_ARGS}

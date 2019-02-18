@@ -83,14 +83,12 @@ int main(int argc, char **argv)
 
 	//! Add noise
 	if(add_noise && sigma)
-	{
 		addNoise(original, noisy, sigma, verbose);
-
-		//! Save noisy image
-		saveImage(noisy_path.c_str(), noisy, imSize);
-	}
 	else
 		noisy = original;
+
+    //! Save noisy image
+    saveImage(noisy_path.c_str(), noisy, imSize);
 
 	if(changeBasis)
 	{
