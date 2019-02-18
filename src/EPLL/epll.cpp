@@ -290,10 +290,10 @@ void logGausspdf(
 	 * In order to avoid unnecessary traspositions, we compute patches * Q R^{-1/2}.
 	 */
 	productMatrix(output,
-			patches,
-			model.invSqrtCov,
-			nbP, model.rank, dim,
-			false, false);
+	              patches,
+	              model.invSqrtCov,
+	              nbP, model.rank, dim,
+	              false, false);
 
 	// Initialize the results
 	float constant = dim * std::log(2*PI);
